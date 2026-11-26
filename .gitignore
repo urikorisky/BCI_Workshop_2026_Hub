@@ -1,0 +1,16 @@
+# Dependencies & Build Outputs
+node_modules/
+dist/
+src-tauri/target/
+
+# Environment & Secrets
+.env
+.env.local
+.env.*.local
+
+# OS & Logs
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+npm-debug.log*

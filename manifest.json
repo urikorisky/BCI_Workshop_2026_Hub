@@ -1,0 +1,239 @@
+{
+  "manifest_version": "1.0.0",
+  "workshop_year": 2026,
+  "urls": {
+    "gitbook": "https://urikorisky.gitbook.io/bci-workshop-2026",
+    "student_repo": "https://github.com/urikorisky/BCI_Workshop_2026_Student_Facing",
+    "telemetry_endpoint": "https://script.google.com/macros/s/REPLACE_WITH_YOUR_DEPLOYMENT_ID/exec"
+  },
+  "oauth_client_id": "REPLACE_WITH_YOUR_DESKTOP_OAUTH_CLIENT_ID.apps.googleusercontent.com",
+  "notice": {
+    "enabled": false,
+    "severity": "info",
+    "he": "",
+    "en": ""
+  },
+  "python": {
+    "target_version": "3.11",
+    "min_version": "3.10",
+    "max_exclusive_version": "3.13",
+    "core_packages": [
+      "pyserial",
+      "numpy",
+      "scipy",
+      "PyQt6",
+      "sounddevice",
+      "matplotlib",
+      "pylsl",
+      "mne",
+      "brainflow"
+    ],
+    "jupyter_packages": [
+      "jupyterlab",
+      "ipywidgets"
+    ]
+  },
+  "arduino": {
+    "cores": [
+      "arduino:avr"
+    ],
+    "libraries": [
+      "Servo",
+      "AccelStepper",
+      "Adafruit ADS1X15",
+      "Adafruit NeoPixel"
+    ]
+  },
+  "components": {
+    "arduino_ide": {
+      "version": "2.3.4",
+      "approx_size_mb": 200,
+      "windows": {
+        "url": "https://downloads.arduino.cc/arduino-ide/arduino-ide_2.3.4_Windows_64bit.exe",
+        "sha256": "",
+        "kind": "installer_exe"
+      },
+      "macos_arm64": {
+        "url": "https://downloads.arduino.cc/arduino-ide/arduino-ide_2.3.4_macOS_arm64.dmg",
+        "sha256": "",
+        "kind": "dmg"
+      },
+      "macos_x64": {
+        "url": "https://downloads.arduino.cc/arduino-ide/arduino-ide_2.3.4_macOS_64bit.dmg",
+        "sha256": "",
+        "kind": "dmg"
+      }
+    },
+    "arduino_cli": {
+      "version": "1.1.1",
+      "approx_size_mb": 18,
+      "windows": {
+        "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.1.1_Windows_64bit.zip",
+        "sha256": "",
+        "kind": "zip"
+      },
+      "macos_arm64": {
+        "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.1.1_macOS_ARM64.tar.gz",
+        "sha256": "",
+        "kind": "targz"
+      },
+      "macos_x64": {
+        "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_1.1.1_macOS_64bit.tar.gz",
+        "sha256": "",
+        "kind": "targz"
+      }
+    },
+    "uv": {
+      "version": "0.5.x",
+      "approx_size_mb": 16,
+      "windows": {
+        "url": "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-pc-windows-msvc.zip",
+        "sha256": "",
+        "kind": "zip"
+      },
+      "macos_arm64": {
+        "url": "https://github.com/astral-sh/uv/releases/latest/download/uv-aarch64-apple-darwin.tar.gz",
+        "sha256": "",
+        "kind": "targz"
+      },
+      "macos_x64": {
+        "url": "https://github.com/astral-sh/uv/releases/latest/download/uv-x86_64-apple-darwin.tar.gz",
+        "sha256": "",
+        "kind": "targz"
+      }
+    },
+    "openbci_gui": {
+      "version": "5.2.2",
+      "approx_size_mb": 250,
+      "windows": {
+        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v5.2.2/openbcigui_v5.2.2_windows64.zip",
+        "sha256": "",
+        "kind": "zip"
+      },
+      "macos_arm64": {
+        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v5.2.2/openbcigui_v5.2.2_macosx.dmg",
+        "sha256": "",
+        "kind": "dmg"
+      },
+      "macos_x64": {
+        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v5.2.2/openbcigui_v5.2.2_macosx.dmg",
+        "sha256": "",
+        "kind": "dmg"
+      }
+    },
+    "lab_recorder": {
+      "version": "1.16.4",
+      "approx_size_mb": 45,
+      "windows": {
+        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.16.4/LabRecorder-1.16.4-Win_amd64.zip",
+        "sha256": "",
+        "kind": "zip"
+      },
+      "macos_arm64": {
+        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.16.4/LabRecorder-1.16.4-OSX_amd64.dmg",
+        "sha256": "",
+        "kind": "dmg"
+      },
+      "macos_x64": {
+        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.16.4/LabRecorder-1.16.4-OSX_amd64.dmg",
+        "sha256": "",
+        "kind": "dmg"
+      }
+    },
+    "thonny": {
+      "version": "4.1.7",
+      "approx_size_mb": 35,
+      "windows": {
+        "url": "https://github.com/thonny/thonny/releases/download/v4.1.7/thonny-4.1.7.exe",
+        "sha256": "",
+        "kind": "installer_exe"
+      },
+      "macos_arm64": {
+        "url": "https://github.com/thonny/thonny/releases/download/v4.1.7/thonny-4.1.7.pkg",
+        "sha256": "",
+        "kind": "pkg"
+      },
+      "macos_x64": {
+        "url": "https://github.com/thonny/thonny/releases/download/v4.1.7/thonny-4.1.7.pkg",
+        "sha256": "",
+        "kind": "pkg"
+      }
+    },
+    "antigravity": {
+      "version": "latest",
+      "approx_size_mb": 180,
+      "windows": {
+        "url": "https://antigravity.google/download",
+        "sha256": "",
+        "kind": "browser_page"
+      },
+      "macos_arm64": {
+        "url": "https://antigravity.google/download",
+        "sha256": "",
+        "kind": "browser_page"
+      },
+      "macos_x64": {
+        "url": "https://antigravity.google/download",
+        "sha256": "",
+        "kind": "browser_page"
+      }
+    },
+    "github_desktop": {
+      "version": "latest",
+      "approx_size_mb": 130,
+      "windows": {
+        "url": "https://central.github.com/deployments/desktop/desktop/latest/win32",
+        "sha256": "",
+        "kind": "installer_exe"
+      },
+      "macos_arm64": {
+        "url": "https://central.github.com/deployments/desktop/desktop/latest/darwin-arm64",
+        "sha256": "",
+        "kind": "zip"
+      },
+      "macos_x64": {
+        "url": "https://central.github.com/deployments/desktop/desktop/latest/darwin",
+        "sha256": "",
+        "kind": "zip"
+      }
+    },
+    "ch340_driver": {
+      "version": "3.9",
+      "approx_size_mb": 5,
+      "windows": {
+        "url": "https://www.wch-ic.com/downloads/CH341SER_EXE.html",
+        "sha256": "",
+        "kind": "browser_page"
+      },
+      "macos_arm64": {
+        "url": "https://www.wch-ic.com/downloads/CH34XSER_MAC_ZIP.html",
+        "sha256": "",
+        "kind": "browser_page"
+      },
+      "macos_x64": {
+        "url": "https://www.wch-ic.com/downloads/CH34XSER_MAC_ZIP.html",
+        "sha256": "",
+        "kind": "browser_page"
+      }
+    },
+    "ftdi_driver": {
+      "version": "2.12.36",
+      "approx_size_mb": 5,
+      "windows": {
+        "url": "https://ftdichip.com/drivers/vcp-drivers/",
+        "sha256": "",
+        "kind": "browser_page"
+      },
+      "macos_arm64": {
+        "url": "https://ftdichip.com/drivers/vcp-drivers/",
+        "sha256": "",
+        "kind": "browser_page"
+      },
+      "macos_x64": {
+        "url": "https://ftdichip.com/drivers/vcp-drivers/",
+        "sha256": "",
+        "kind": "browser_page"
+      }
+    }
+  }
+}
