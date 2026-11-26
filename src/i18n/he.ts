@@ -268,10 +268,10 @@ export const he = {
     heading: 'לוח בקרה יומי — BCI Workshop 2026',
     subheading: 'גישה מהירה לכל כלי הסדנה, חומרי הלימוד ובדיקות החומרה.',
     materialsSection: 'חומרי הסדנה והתיעוד',
-    openGitbook: 'פתח את אתר הקורס (GitBook)',
+    openGitbook: 'פתח את אתר הקורס',
     openGitbookDesc: 'מדריכים, דיאגרמות חיבורים, קישורים להורדה יומית ומצגות',
     openGithub: 'פתח מאגר קוד (GitHub)',
-    createShortcut: 'צור קיצור דרך ל-GitBook על שולחן העבודה',
+    createShortcut: 'צור קיצור דרך לאתר הקורס על שולחן העבודה',
     shortcutCreated: 'קיצור הדרך נוצר על שולחן העבודה ✓',
     appsSection: 'הפעלת סביבות ותוכנות',
     launchBtn: 'הפעל',
@@ -283,7 +283,7 @@ export const he = {
     stuckBtn: 'נתקעתי — שלח דוח תקלה למרצה',
     advancedTitle: 'הגדרות מתקדמות (אופציונלי)',
     advancedDesc:
-      'בברירת מחדל מומלץ להוריד קבצים יומיים ישירות מ-GitBook. לתלמידים מנוסים יותר: סנכרון מלא של מאגר Student_Facing לתיקייה מקומית.',
+      'בברירת מחדל מומלץ להוריד קבצים יומיים ישירות מאתר הקורס. לתלמידים מנוסים יותר: סנכרון מלא של מאגר Student_Facing לתיקייה מקומית.',
     syncMaterialsBtn: 'סנכרן את כל קבצי הקורס לתיקייה מקומית',
     syncing: 'מסנכרן קבצים...',
     appLabels: {

@@ -261,10 +261,10 @@ export const en: Translations = {
     heading: 'Daily Dashboard — BCI Workshop 2026',
     subheading: 'One-click access to installed tools, course materials, and hardware helpers.',
     materialsSection: 'Course Materials & Documentation',
-    openGitbook: 'Open Course Website (GitBook)',
+    openGitbook: 'Open Course Website',
     openGitbookDesc: 'Guides, wiring diagrams, daily ZIP downloads & slide links',
     openGithub: 'Open Code Repo (GitHub)',
-    createShortcut: 'Create GitBook Shortcut on Desktop',
+    createShortcut: 'Create Course Website Shortcut on Desktop',
     shortcutCreated: 'Desktop shortcut created ✓',
     appsSection: 'Launch Installed Tools',
     launchBtn: 'Launch',
@@ -276,7 +276,7 @@ export const en: Translations = {
     stuckBtn: "I'm Stuck — Send Report to Instructor",
     advancedTitle: 'Advanced Settings (Optional)',
     advancedDesc:
-      'By default, downloading daily packages directly from GitBook is recommended. For advanced users: 1-click local sync of the Student_Facing repository.',
+      'By default, downloading daily packages directly from the course website is recommended. For advanced users: 1-click local sync of the Student_Facing repository.',
     syncMaterialsBtn: 'Sync All Course Files Locally',
     syncing: 'Syncing repository...',
     appLabels: {

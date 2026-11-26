@@ -1,6 +1,6 @@
 [package]
 name = "bci-workshop-hub"
-version = "0.1.3"
+version = "0.1.4"
 description = "Cross-platform onboarding and daily classroom hub for BIU BCI Workshop 2026"
 authors = ["Dr. Uri Korisky"]
 edition = "2021"

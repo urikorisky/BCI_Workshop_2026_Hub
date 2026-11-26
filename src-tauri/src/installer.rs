@@ -164,7 +164,7 @@ fn extract_archive(archive: &Path, dest_dir: &Path) -> Result<(), String> {
 
 async fn ensure_uv(app: &tauri::AppHandle, manifest: &Manifest) -> Result<PathBuf, String> {
     let uv_bin = workshop_uv_bin();
-    if uv_bin.exists() {
+    if uv_bin.is_file() {
         return Ok(uv_bin);
     }
     let artifact = select_artifact(manifest, "uv")
@@ -174,10 +174,25 @@ async fn ensure_uv(app: &tauri::AppHandle, manifest: &Manifest) -> Result<PathBu
     download_file_verified(app, "python_env", &artifact.url, &artifact.sha256, &archive_path).await?;
     let uv_dir = workshop_tools_dir().join("uv");
     extract_archive(&archive_path, &uv_dir)?;
-    if uv_bin.exists() {
-        return Ok(uv_bin);
+    let resolved = workshop_uv_bin();
+    if resolved.is_file() {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(meta) = std::fs::metadata(&resolved) {
+                let mut perms = meta.permissions();
+                if perms.mode() & 0o111 == 0 {
+                    perms.set_mode(0o755);
+                    let _ = std::fs::set_permissions(&resolved, perms);
+                }
+            }
+        }
+        return Ok(resolved);
     }
-    Err("uv binary missing after archive extraction".to_string())
+    Err(format!(
+        "uv binary missing after archive extraction in {}",
+        uv_dir.display()
+    ))
 }
 
 fn find_extracted_uv_python(uv_py_dir: &Path, target_minor: &str) -> Option<PathBuf> {
@@ -586,7 +601,7 @@ pub async fn create_gitbook_shortcut(url: String) -> Result<String, String> {
 
     #[cfg(target_os = "windows")]
     {
-        let shortcut = desktop.join("BCI_Workshop_2026_GitBook.url");
+        let shortcut = desktop.join("BCI_Workshop_2026_Website.url");
         let content = format!("[InternetShortcut]\r\nURL={url}\r\n");
         std::fs::write(&shortcut, content)
             .map_err(|e| format!("Failed writing desktop shortcut: {e}"))?;
@@ -594,7 +609,7 @@ pub async fn create_gitbook_shortcut(url: String) -> Result<String, String> {
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let shortcut = desktop.join("BCI_Workshop_2026_GitBook.webloc");
+        let shortcut = desktop.join("BCI_Workshop_2026_Website.webloc");
         let content = format!(
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\"><dict><key>URL</key><string>{url}</string></dict></plist>\n"
         );
@@ -632,7 +647,7 @@ pub async fn sync_course_materials(repo_url: String) -> Result<String, String> {
         }
     }
 
-    Err("Git is not installed yet — download daily ZIPs directly from GitBook or install GitHub Desktop.".to_string())
+    Err("Git is not installed yet — download daily ZIPs directly from the course website or install GitHub Desktop.".to_string())
 }
 
 #[tauri::command]

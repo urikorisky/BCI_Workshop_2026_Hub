@@ -57,7 +57,7 @@ jobs:
         shell: bash
         run: |
           python - << 'EOF'
-          import json, os, platform, subprocess, sys
+          import glob, json, os, platform, shutil, subprocess, sys, tempfile, urllib.request
 
           def fail(label, details):
               msg = f"{label}: {details}".replace("\r", "").replace("\n", " | ")
@@ -71,11 +71,36 @@ jobs:
                   fail(label, (p.stdout or "") + "\n" + (p.stderr or ""))
               return p.stdout
 
+          m = json.load(open("manifest.json", encoding="utf-8"))
+          sys_name = platform.system()
+          machine = platform.machine().lower()
+          if sys_name == "Windows":
+              uv_art = m["components"]["uv"]["windows"]
+              uv_name = "uv.exe"
+          elif "arm" in machine or "aarch64" in machine:
+              uv_art = m["components"]["uv"]["macos_arm64"]
+              uv_name = "uv"
+          else:
+              uv_art = m["components"]["uv"]["macos_x64"]
+              uv_name = "uv"
+
+          uv_tmp = tempfile.mkdtemp(prefix="bci_uv_tar_qa_")
+          uv_arc = os.path.join(uv_tmp, "uv.tar.gz" if uv_art["kind"] == "targz" else "uv.zip")
+          uv_extract = os.path.join(uv_tmp, "uv")
+          os.makedirs(uv_extract, exist_ok=True)
+          urllib.request.urlretrieve(uv_art["url"], uv_arc)
+          run_step("uv tar -xf regression", ["tar", "-xf", uv_arc, "-C", uv_extract])
+          uv_candidates = [os.path.join(uv_extract, uv_name)] + glob.glob(os.path.join(uv_extract, "*", uv_name))
+          uv_resolved = next((p for p in uv_candidates if os.path.isfile(p)), None)
+          if not uv_resolved:
+              fail("uv archive lookup", f"uv binary not found under {uv_extract}: {os.listdir(uv_extract)}")
+          print("Resolved extracted uv:", uv_resolved, run_step("uv --version", [uv_resolved, "--version"]).strip())
+          shutil.rmtree(uv_tmp, ignore_errors=True)
+
           run_step("uv python install 3.11", ["uv", "python", "install", "3.11"])
           run_step("uv venv", ["uv", "venv", ".smoke-venv", "--python", "3.11"])
-          venv_py = ".smoke-venv/Scripts/python.exe" if platform.system() == "Windows" else ".smoke-venv/bin/python"
+          venv_py = ".smoke-venv/Scripts/python.exe" if sys_name == "Windows" else ".smoke-venv/bin/python"
 
-          m = json.load(open("manifest.json", encoding="utf-8"))
           pkgs = m["python"]["core_packages"] + m["python"]["jupyter_packages"]
           run_step("uv pip install", ["uv", "pip", "install", "--python", venv_py, *pkgs])
 

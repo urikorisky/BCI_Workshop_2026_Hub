@@ -258,9 +258,12 @@ pub fn detect_antigravity_path() -> Option<String> {
     }
     #[cfg(target_os = "macos")]
     {
+        let home = dirs::home_dir().unwrap_or_default();
         first_existing_path(vec![
             PathBuf::from("/Applications/Antigravity.app"),
-            dirs::home_dir().unwrap_or_default().join("Applications/Antigravity.app"),
+            home.join("Applications/Antigravity.app"),
+            PathBuf::from("/Applications/Google Antigravity.app"),
+            home.join("Applications/Google Antigravity.app"),
         ])
     }
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]

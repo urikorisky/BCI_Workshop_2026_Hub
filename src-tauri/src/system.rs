@@ -58,14 +58,29 @@ pub fn workshop_arduino_cli() -> PathBuf {
 }
 
 pub fn workshop_uv_bin() -> PathBuf {
-    #[cfg(target_os = "windows")]
-    {
-        workshop_tools_dir().join("uv").join("uv.exe")
+    let uv_root = workshop_tools_dir().join("uv");
+    let bin_name = if cfg!(target_os = "windows") {
+        "uv.exe"
+    } else {
+        "uv"
+    };
+    let direct = uv_root.join(bin_name);
+    if direct.is_file() {
+        return direct;
     }
-    #[cfg(not(target_os = "windows"))]
-    {
-        workshop_tools_dir().join("uv").join("uv")
+    // Astral macOS tarballs extract into a nested directory (e.g. uv-aarch64-apple-darwin/uv).
+    if let Ok(entries) = std::fs::read_dir(&uv_root) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                let nested = path.join(bin_name);
+                if nested.is_file() {
+                    return nested;
+                }
+            }
+        }
     }
+    direct
 }
 
 pub fn is_ascii_str(s: &str) -> bool {

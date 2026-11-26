@@ -148,7 +148,7 @@ export async function runDiagnostics(selectedApps: ComponentId[]): Promise<Diagn
     return {
       timestamp: new Date().toISOString(),
       os_arch: 'windows / x86_64 (preview)',
-      hub_version: '0.1.1',
+      hub_version: '0.1.4',
       overall_status: 'warn',
       checks: [
         {
@@ -238,7 +238,7 @@ export async function uploadTelemetry(params: {
       endpoint: params.endpoint,
       id_token: params.user.id_token,
       event_type: params.eventType,
-      hub_version: '0.1.3',
+      hub_version: '0.1.4',
       overall_status:
         params.overallStatus ??
         params.report?.overall_status ??
@@ -262,7 +262,7 @@ export async function openExternalUrl(url: string): Promise<void> {
 
 export async function createGitbookShortcut(url: string): Promise<string> {
   if (!isTauriRuntime()) {
-    return 'Desktop/BCI_Workshop_2026_GitBook.url (preview)';
+    return 'Desktop/BCI_Workshop_2026_Website.url (preview)';
   }
   return invoke<string>('create_gitbook_shortcut', { url });
 }
