@@ -240,6 +240,7 @@ outlet = pylsl.StreamOutlet(info)
 streams = pylsl.resolve_byprop("name", "HubDiagStream", timeout=3.0)
 assert len(streams) >= 1, "Could not resolve local LSL stream"
 inlet = pylsl.StreamInlet(streams[0])
+inlet.open_stream(timeout=3.0)
 for i in range(5):
     outlet.push_sample([float(i)])
     time.sleep(0.01)

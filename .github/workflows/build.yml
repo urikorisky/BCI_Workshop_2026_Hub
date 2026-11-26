@@ -77,6 +77,7 @@ jobs:
           streams = pylsl.resolve_byprop("name", "CIQaStream", timeout=5.0)
           assert len(streams) >= 1, "Failed resolving synthetic LSL stream"
           inlet = pylsl.StreamInlet(streams[0])
+          inlet.open_stream(timeout=3.0)
           outlet.push_sample([42.0])
           sample, _ = inlet.pull_sample(timeout=2.0)
           assert sample is not None and abs(sample[0] - 42.0) < 1e-3
