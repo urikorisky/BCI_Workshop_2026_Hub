@@ -56,46 +56,69 @@ jobs:
       - name: Clean-room Python 3.11 + LSL + BrainFlow + GUI smoke test
         shell: bash
         run: |
-          uv python install 3.11
-          uv venv .smoke-venv --python 3.11
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            VENV_PY=".smoke-venv/Scripts/python.exe"
-          else
-            VENV_PY=".smoke-venv/bin/python"
-          fi
-          PKGS=$(python -c "import json; m=json.load(open('manifest.json')); print(' '.join(m['python']['core_packages'] + m['python']['jupyter_packages']))")
-          uv pip install --python "$VENV_PY" $PKGS
-          QT_QPA_PLATFORM=offscreen "$VENV_PY" - << 'EOF'
-          import sys, time
-          import serial, numpy, scipy, PyQt6, sounddevice, matplotlib, mne, jupyterlab, tkinter
-          import pylsl
-          from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+          python - << 'EOF'
+          import json, os, platform, subprocess, sys
 
-          # 1. Synthetic LSL loopback
-          info = pylsl.StreamInfo("CIQaStream", "EEG", 1, 100, "float32", "ci_qa_01")
-          outlet = pylsl.StreamOutlet(info)
-          streams = pylsl.resolve_byprop("name", "CIQaStream", timeout=5.0)
-          assert len(streams) >= 1, "Failed resolving synthetic LSL stream"
-          inlet = pylsl.StreamInlet(streams[0])
-          inlet.open_stream(timeout=3.0)
-          outlet.push_sample([42.0])
-          sample, _ = inlet.pull_sample(timeout=2.0)
-          assert sample is not None and abs(sample[0] - 42.0) < 1e-3
+          def fail(label, details):
+              msg = f"{label}: {details}".replace("\r", "").replace("\n", " | ")
+              print(f"::error::{msg[:3500]}")
+              print(details, file=sys.stderr)
+              sys.exit(1)
 
-          # 2. Synthetic BrainFlow stream
-          BoardShim.disable_board_logger()
-          board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, BrainFlowInputParams())
-          board.prepare_session()
-          board.start_stream()
-          time.sleep(0.4)
-          data = board.get_board_data()
-          board.stop_stream()
-          board.release_session()
-          assert data.shape[1] > 0, "No samples from BrainFlow SYNTHETIC_BOARD"
+          def run_step(label, cmd, env=None):
+              p = subprocess.run(cmd, env=env, capture_output=True, text=True)
+              if p.returncode != 0:
+                  fail(label, (p.stdout or "") + "\n" + (p.stderr or ""))
+              return p.stdout
 
-          # 3. Audio devices query
-          _ = sounddevice.query_devices()
-          print("CLEAN-ROOM PYTHON QA PASSED on", sys.platform, sys.version.split()[0])
+          run_step("uv python install 3.11", ["uv", "python", "install", "3.11"])
+          run_step("uv venv", ["uv", "venv", ".smoke-venv", "--python", "3.11"])
+          venv_py = ".smoke-venv/Scripts/python.exe" if platform.system() == "Windows" else ".smoke-venv/bin/python"
+
+          m = json.load(open("manifest.json", encoding="utf-8"))
+          pkgs = m["python"]["core_packages"] + m["python"]["jupyter_packages"]
+          run_step("uv pip install", ["uv", "pip", "install", "--python", venv_py, *pkgs])
+
+          smoke_code = """
+          import sys, time, traceback
+          try:
+              import serial, numpy, scipy, PyQt6, sounddevice, matplotlib, mne, jupyterlab, tkinter
+              import pylsl
+              from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+
+              # 1. Synthetic LSL loopback
+              info = pylsl.StreamInfo("CIQaStream", "EEG", 1, 100, "float32", "ci_qa_01")
+              outlet = pylsl.StreamOutlet(info)
+              streams = pylsl.resolve_byprop("name", "CIQaStream", timeout=5.0)
+              assert len(streams) >= 1, "Failed resolving synthetic LSL stream"
+              inlet = pylsl.StreamInlet(streams[0])
+              inlet.open_stream(timeout=3.0)
+              outlet.push_sample([42.0])
+              sample, _ = inlet.pull_sample(timeout=3.0)
+              assert sample is not None and abs(sample[0] - 42.0) < 1e-3, f"Bad LSL sample: {sample}"
+
+              # 2. Synthetic BrainFlow stream
+              BoardShim.disable_board_logger()
+              board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, BrainFlowInputParams())
+              board.prepare_session()
+              board.start_stream()
+              time.sleep(0.4)
+              data = board.get_board_data()
+              board.stop_stream()
+              board.release_session()
+              assert data.shape[1] > 0, "No samples from BrainFlow SYNTHETIC_BOARD"
+
+              # 3. Audio devices query
+              _ = sounddevice.query_devices()
+              print("CLEAN-ROOM PYTHON QA PASSED on", sys.platform, sys.version.split()[0])
+          except Exception:
+              traceback.print_exc()
+              sys.exit(1)
+          """
+          import textwrap
+          env = os.environ.copy()
+          env["QT_QPA_PLATFORM"] = "offscreen"
+          run_step("python smoke test", [venv_py, "-c", textwrap.dedent(smoke_code)], env=env)
           EOF
 
       - name: Clean-room Arduino CLI + Servo/AccelStepper offline compile test
