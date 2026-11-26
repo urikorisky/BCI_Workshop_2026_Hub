@@ -120,11 +120,34 @@ pub fn detect_arduino_ide_path() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
         let local_app = dirs::data_local_dir().unwrap_or_default();
-        first_existing_path(vec![
+        if let Some(found) = first_existing_path(vec![
             local_app.join("Programs").join("Arduino IDE").join("Arduino IDE.exe"),
             PathBuf::from(r"C:\Program Files\Arduino IDE\Arduino IDE.exe"),
+            PathBuf::from(r"C:\Program Files (x86)\Arduino IDE\Arduino IDE.exe"),
             PathBuf::from(r"C:\Program Files (x86)\Arduino\arduino.exe"),
-        ])
+        ]) {
+            return Some(found);
+        }
+
+        // Fallback: check Windows Uninstall Registry for custom install locations.
+        let ps = "$p = Get-ItemProperty 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKLM:\\Software\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*','HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\*' -ErrorAction SilentlyContinue | Where-Object { $_.DisplayName -match 'Arduino IDE' } | Select-Object -First 1 -ExpandProperty UninstallString; if ($p) { $p }";
+        if let Some((true, stdout, _)) = run_silent_command("powershell", &["-NoProfile", "-Command", ps]) {
+            let trimmed = stdout.trim();
+            if !trimmed.is_empty() {
+                let exe_part = if let Some(rest) = trimmed.strip_prefix('"') {
+                    rest.split('"').next().unwrap_or("")
+                } else {
+                    trimmed.split_whitespace().next().unwrap_or("")
+                };
+                if let Some(dir) = PathBuf::from(exe_part).parent() {
+                    let candidate = dir.join("Arduino IDE.exe");
+                    if candidate.exists() {
+                        return Some(candidate.to_string_lossy().to_string());
+                    }
+                }
+            }
+        }
+        None
     }
     #[cfg(target_os = "macos")]
     {
@@ -355,16 +378,25 @@ pub async fn scan_installed_components() -> Result<Vec<ComponentScanStatus>, Str
     // 4. arduino_ide (+ arduino-cli)
     let arduino_path = detect_arduino_ide_path();
     let cli_ok = workshop_arduino_cli().exists();
+    let arduino_notes = match (arduino_path.is_some(), cli_ok) {
+        (true, true) => Some("ide_and_cli_ready".to_string()),
+        (true, false) => Some("ide_only_missing_libs".to_string()),
+        (false, _) => Some("not_found".to_string()),
+    };
     results.push(ComponentScanStatus {
         id: "arduino_ide".to_string(),
-        installed: arduino_path.is_some() && cli_ok,
+        installed: arduino_path.is_some(),
         detected_version: if arduino_path.is_some() {
-            Some(if cli_ok { "IDE + CLI".to_string() } else { "IDE only".to_string() })
+            Some(if cli_ok {
+                "IDE + Libraries".to_string()
+            } else {
+                "IDE installed (libs pending)".to_string()
+            })
         } else {
             None
         },
         detected_path: arduino_path,
-        notes: None,
+        notes: arduino_notes,
     });
 
     // 5. drivers

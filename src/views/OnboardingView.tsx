@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Cpu,
@@ -11,16 +11,20 @@ import {
   ArrowRight,
   Terminal,
   Info,
+  CloudCheck,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import {
   getSystemGuardrails,
   installComponent,
   listenInstallProgress,
+  runDiagnostics,
   scanInstalledComponents,
+  uploadTelemetry,
 } from '../api/bridge';
 import { PreActionModal } from '../components/PreActionModal';
 import type {
+  AuthUser,
   ComponentId,
   ComponentScanStatus,
   Manifest,
@@ -29,6 +33,7 @@ import type {
 } from '../types';
 
 interface OnboardingViewProps {
+  user: AuthUser;
   manifest: Manifest | null;
   selectedApps: ComponentId[];
   onSelectedAppsChange: (ids: ComponentId[]) => void;
@@ -57,6 +62,7 @@ const COMPONENT_ORDER: ComponentId[] = [
 ];
 
 export const OnboardingView: React.FC<OnboardingViewProps> = ({
+  user,
   manifest,
   selectedApps,
   onSelectedAppsChange,
@@ -69,25 +75,57 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   const [scanning, setScanning] = useState(true);
   const [installing, setInstalling] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
+  const [preScanTelemetryState, setPreScanTelemetryState] = useState<'idle' | 'sending' | 'sent'>(
+    'idle'
+  );
   const [activeModal, setActiveModal] = useState<PreActionModalPayload | null>(null);
   const [pendingResolver, setPendingResolver] = useState<((ok: boolean) => void) | null>(null);
+  const hasAutoUploadedPreScan = useRef(false);
 
   const appendLog = (line: string) => {
     setLogs((prev) => [...prev.slice(-80), line]);
   };
 
-  const runScan = async () => {
+  const needsSetupAction = (id: ComponentId, list: ComponentScanStatus[]): boolean => {
+    const status = list.find((item) => item.id === id);
+    if (!status?.installed) return true;
+    if (id === 'arduino_ide' && status.notes === 'ide_only_missing_libs') return true;
+    return false;
+  };
+
+  const runScan = async (autoUploadBaseline = false) => {
     setScanning(true);
     try {
       const [g, s] = await Promise.all([getSystemGuardrails(), scanInstalledComponents()]);
       setGuardrails(g);
       setScans(s);
       onScanUpdated(s);
-      const autoDefaults = REQUIRED_IDS.filter(
-        (id) => !s.find((item) => item.id === id)?.installed
-      );
+      const autoDefaults = REQUIRED_IDS.filter((id) => needsSetupAction(id, s));
       if (selectedApps.length === 0 && autoDefaults.length > 0) {
         onSelectedAppsChange(autoDefaults);
+      }
+
+      if (autoUploadBaseline && !hasAutoUploadedPreScan.current) {
+        hasAutoUploadedPreScan.current = true;
+        const endpoint = manifest?.urls.telemetry_endpoint ?? '';
+        if (endpoint && !endpoint.includes('REPLACE_WITH')) {
+          setPreScanTelemetryState('sending');
+          try {
+            const baselineReport = await runDiagnostics(autoDefaults);
+            const osArch = `${g.os_name} ${g.os_version} (${g.arch})`.trim();
+            const resp = await uploadTelemetry({
+              endpoint,
+              user,
+              eventType: 'pre_scan_diagnostics',
+              report: baselineReport,
+              osArch,
+              optionalAppsSelected: autoDefaults,
+            });
+            setPreScanTelemetryState(resp.ok ? 'sent' : 'idle');
+          } catch {
+            setPreScanTelemetryState('idle');
+          }
+        }
       }
     } finally {
       setScanning(false);
@@ -95,7 +133,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   };
 
   useEffect(() => {
-    void runScan();
+    void runScan(true);
     let unlisten: (() => void) | undefined;
     void listenInstallProgress((evt) => {
       appendLog(`[${evt.component_id}] (${evt.percent}%) ${evt.message}`);
@@ -116,9 +154,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   };
 
   const selectRequiredMissing = () => {
-    const missing = REQUIRED_IDS.filter(
-      (id) => !scans.find((s) => s.id === id)?.installed
-    );
+    const missing = REQUIRED_IDS.filter((id) => needsSetupAction(id, scans));
     onSelectedAppsChange(missing);
   };
 
@@ -153,26 +189,34 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         appendLog(`[${id}] ERROR: ${String(err)}`);
       }
     }
-    await runScan();
+    await runScan(false);
     setInstalling(false);
   };
 
   const scanMap = new Map(scans.map((s) => [s.id, s]));
 
-  const getPythonPreScanBanner = (status?: ComponentScanStatus): string | null => {
+  const getCardPreScanBanner = (
+    id: ComponentId,
+    status?: ComponentScanStatus
+  ): string | null => {
     if (!status) return null;
-    const ver = status.detected_version ?? '';
-    if (status.notes === 'venv_ready') {
-      return t.onboarding.pythonVenvReady.replace('{ver}', ver);
+    if (id === 'python_env') {
+      const ver = status.detected_version ?? '';
+      if (status.notes === 'venv_ready') {
+        return t.onboarding.pythonVenvReady.replace('{ver}', ver);
+      }
+      if (status.notes === 'compatible_system_python') {
+        return t.onboarding.pythonReuseCompatible.replace('{ver}', ver);
+      }
+      if (status.notes === 'incompatible_system_python') {
+        return t.onboarding.pythonIncompatibleFound.replace('{ver}', ver);
+      }
+      if (status.notes === 'not_found') {
+        return t.onboarding.pythonNotFound;
+      }
     }
-    if (status.notes === 'compatible_system_python') {
-      return t.onboarding.pythonReuseCompatible.replace('{ver}', ver);
-    }
-    if (status.notes === 'incompatible_system_python') {
-      return t.onboarding.pythonIncompatibleFound.replace('{ver}', ver);
-    }
-    if (status.notes === 'not_found') {
-      return t.onboarding.pythonNotFound;
+    if (id === 'arduino_ide' && status.notes === 'ide_only_missing_libs') {
+      return t.onboarding.arduinoIdeOnlyBanner;
     }
     return null;
   };
@@ -182,10 +226,23 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       {/* Pre-Flight System Guardrails */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-bold text-slate-900">{t.guardrails.title}</h2>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-base font-bold text-slate-900">{t.guardrails.title}</h2>
+            {preScanTelemetryState === 'sending' && (
+              <span className="rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-medium text-brand-700">
+                {t.onboarding.preScanUploading}
+              </span>
+            )}
+            {preScanTelemetryState === 'sent' && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                <CloudCheck className="h-3.5 w-3.5" />
+                <span>{t.onboarding.preScanUploadOk}</span>
+              </span>
+            )}
+          </div>
           <button
             type="button"
-            onClick={runScan}
+            onClick={() => void runScan(false)}
             disabled={scanning || installing}
             className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
@@ -295,7 +352,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               const isSelected = selectedApps.includes(id);
               const isInstalled = Boolean(status?.installed);
               const isRequired = REQUIRED_IDS.includes(id);
-              const pythonBanner = id === 'python_env' ? getPythonPreScanBanner(status) : null;
+              const preScanBanner = getCardPreScanBanner(id, status);
 
               return (
                 <div
@@ -335,10 +392,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                     {copy.whyNeeded}
                   </p>
 
-                  {pythonBanner && (
+                  {preScanBanner && (
                     <div className="mt-3 flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50/70 p-2.5 text-xs font-medium text-brand-900">
                       <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-                      <span>{pythonBanner}</span>
+                      <span>{preScanBanner}</span>
                     </div>
                   )}
 
@@ -357,7 +414,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         isRequired
-                          ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                          ? 'border border-rose-200 bg-rose-50 text-rose-800'
                           : 'bg-brand-50 text-brand-700'
                       }`}
                     >

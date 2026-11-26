@@ -45,6 +45,7 @@ const AppShell: React.FC = () => {
           <SignInView manifest={manifest} onSignedIn={handleSignedIn} />
         ) : screen === 'onboarding' ? (
           <OnboardingView
+            user={user}
             manifest={manifest}
             selectedApps={selectedApps}
             onSelectedAppsChange={setSelectedApps}

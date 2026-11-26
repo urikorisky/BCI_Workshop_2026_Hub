@@ -20,7 +20,7 @@ export const Header: React.FC<HeaderProps> = ({
   onNavigate,
   onSignOut,
 }) => {
-  const { lang, t, toggleLang } = useI18n();
+  const { lang, setLang, t } = useI18n();
   const {
     theme,
     setTheme,
@@ -60,13 +60,17 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Fixed px sizing on toolbar prevents A+/A- from shifting buttons under a stationary cursor */}
+        <div
+          className="flex shrink-0 flex-wrap items-center gap-[8px]"
+          style={{ fontSize: '13px', lineHeight: '18px' }}
+        >
           {ENABLE_THEME_SWATCH_DEBUG && (
             <div
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5"
+              className="inline-flex items-center gap-[6px] rounded-[8px] border border-slate-200 bg-slate-50 px-[10px] py-[6px]"
               title={lang === 'he' ? 'בחירת ערכת צבעים (מצב ניסוי)' : 'Theme color swatch (debug)'}
             >
-              <Palette className="h-3.5 w-3.5 text-slate-500" />
+              <Palette className="h-[14px] w-[14px] text-slate-500" />
               {THEME_OPTIONS.map((opt) => {
                 const active = theme === opt.id;
                 return (
@@ -76,8 +80,10 @@ export const Header: React.FC<HeaderProps> = ({
                     onClick={() => setTheme(opt.id)}
                     title={lang === 'he' ? opt.labelHe : opt.labelEn}
                     aria-label={lang === 'he' ? opt.labelHe : opt.labelEn}
-                    className={`h-4 w-4 rounded-full transition-transform ${
-                      active ? 'scale-125 ring-2 ring-slate-900 ring-offset-1' : 'opacity-75 hover:opacity-100'
+                    className={`h-[16px] w-[16px] rounded-full transition-transform ${
+                      active
+                        ? 'scale-125 ring-2 ring-slate-900 ring-offset-1'
+                        : 'opacity-75 hover:opacity-100'
                     }`}
                     style={{ backgroundColor: opt.swatchHex }}
                   />
@@ -88,7 +94,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Accessibility A- / A+ font size ticker */}
           <div
-            className="inline-flex items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+            className="inline-flex items-center overflow-hidden rounded-[8px] border border-slate-200 bg-slate-50"
             dir="ltr"
             aria-label={lang === 'he' ? 'הגדלת והקטנת גופן' : 'Adjust font size'}
           >
@@ -97,11 +103,11 @@ export const Header: React.FC<HeaderProps> = ({
               disabled={!canDecreaseFont}
               onClick={decreaseFont}
               title={lang === 'he' ? 'הקטן גופן' : 'Decrease font size'}
-              className="px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-[32px] py-[6px] text-center text-[12px] font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
               A-
             </button>
-            <span className="border-x border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500">
+            <span className="w-[46px] border-x border-slate-200 py-[6px] text-center text-[11px] font-semibold text-slate-500 tabular-nums">
               {fontScale}%
             </span>
             <button
@@ -109,34 +115,57 @@ export const Header: React.FC<HeaderProps> = ({
               disabled={!canIncreaseFont}
               onClick={increaseFont}
               title={lang === 'he' ? 'הגדל גופן' : 'Increase font size'}
-              className="px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+              className="w-[32px] py-[6px] text-center text-[12px] font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
             >
               A+
             </button>
           </div>
 
-          <button
-            type="button"
-            onClick={toggleLang}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 sm:text-sm"
+          {/* Explicit 2-segment language selector */}
+          <div
+            className="inline-flex items-center overflow-hidden rounded-[8px] border border-slate-200 bg-slate-50 p-[2px]"
+            dir="ltr"
+            role="group"
+            aria-label="Language"
           >
-            <Globe className="h-4 w-4 text-brand-600" />
-            <span>{t.langToggle}</span>
-          </button>
+            <Globe className="mx-[6px] h-[14px] w-[14px] shrink-0 text-brand-600" />
+            <button
+              type="button"
+              onClick={() => setLang('he')}
+              className={`rounded-[6px] px-[8px] py-[4px] text-[12px] font-bold transition ${
+                lang === 'he'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              עברית
+            </button>
+            <button
+              type="button"
+              onClick={() => setLang('en')}
+              className={`rounded-[6px] px-[8px] py-[4px] text-[12px] font-bold transition ${
+                lang === 'en'
+                  ? 'bg-brand-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              EN
+            </button>
+          </div>
 
           {user && (
-            <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs">
+            <div className="flex items-center gap-[8px] rounded-[8px] border border-slate-200 bg-slate-50 px-[10px] py-[5px]">
               <div className="hidden text-start sm:block">
-                <div className="font-semibold text-slate-800">{user.name}</div>
+                <div className="text-[12px] font-semibold text-slate-800">{user.name}</div>
                 <div className="text-[11px] text-slate-500">{user.email}</div>
               </div>
               <button
                 type="button"
                 onClick={onSignOut}
                 title={t.signIn.signOut}
-                className="rounded p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800"
+                className="rounded p-[4px] text-slate-500 transition hover:bg-slate-200 hover:text-slate-800"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-[15px] w-[15px]" />
               </button>
             </div>
           )}

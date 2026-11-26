@@ -86,6 +86,15 @@ export async function scanInstalledComponents(): Promise<ComponentScanStatus[]> 
           notes: 'incompatible_system_python',
         };
       }
+      if (id === 'arduino_ide') {
+        return {
+          id,
+          installed: true,
+          detected_version: 'IDE installed (libs pending)',
+          detected_path: 'C:\\Program Files\\Arduino IDE\\Arduino IDE.exe',
+          notes: 'ide_only_missing_libs',
+        };
+      }
       return {
         id,
         installed: PREVIEW_INSTALLED_SET.has(id),
@@ -203,7 +212,7 @@ export async function runDiagnostics(selectedApps: ComponentId[]): Promise<Diagn
 export async function uploadTelemetry(params: {
   endpoint: string;
   user: AuthUser;
-  eventType: 'sign_in' | 'diagnostics' | 'help_request';
+  eventType: 'sign_in' | 'pre_scan_diagnostics' | 'diagnostics' | 'help_request';
   report?: DiagnosticReport;
   osArch?: string;
   optionalAppsSelected: ComponentId[];
@@ -222,7 +231,7 @@ export async function uploadTelemetry(params: {
       endpoint: params.endpoint,
       id_token: params.user.id_token,
       event_type: params.eventType,
-      hub_version: '0.1.1',
+      hub_version: '0.1.2',
       overall_status: params.report?.overall_status ?? (params.eventType === 'sign_in' ? 'SIGNED_IN' : ''),
       os_arch: params.report?.os_arch ?? params.osArch ?? '',
       checks: params.report?.checks ?? [],

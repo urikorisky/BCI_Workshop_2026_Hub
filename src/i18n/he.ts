@@ -81,6 +81,10 @@ export const he = {
     pythonIncompatibleFound:
       'זוהה Python {ver} במחשב (אינו תואם ל-pylsl/brainflow שדורשים 3.10–3.12). תותקן סביבת Python 3.11 מבודדת בתיקיית הסדנה מבלי לפגוע בהתקנה הקיימת שלך.',
     pythonNotFound: 'לא זוהה Python תואם — תותקן סביבת Python 3.11 מבודדת בתיקיית הסדנה.',
+    arduinoIdeOnlyBanner:
+      'זוהה Arduino IDE מותקן במחשב ✓ — השאירו מסומן רק כדי להתקין אוטומטית את ספריות הסדנה (arduino:avr, Servo, AccelStepper) מבלי להתקין מחדש את Arduino IDE.',
+    preScanUploading: 'שולח דוח מצב ראשוני למרצה...',
+    preScanUploadOk: 'דוח מצב ראשוני נשלח למרצה ✓',
   },
   components: {
     python_env: {

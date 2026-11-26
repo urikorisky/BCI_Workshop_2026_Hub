@@ -74,6 +74,10 @@ export const en: Translations = {
       'Python {ver} detected (incompatible with pylsl/brainflow which require 3.10–3.12). An isolated Python 3.11 environment will be installed without touching your existing Python.',
     pythonNotFound:
       'No compatible Python detected — an isolated Python 3.11 environment will be installed inside the workshop folder.',
+    arduinoIdeOnlyBanner:
+      'Arduino IDE is already installed ✓ — keep checked to automatically add the workshop libraries (arduino:avr, Servo, AccelStepper) without reinstalling Arduino IDE.',
+    preScanUploading: 'Uploading initial system report...',
+    preScanUploadOk: 'Initial system report sent to instructor ✓',
   },
   components: {
     python_env: {
