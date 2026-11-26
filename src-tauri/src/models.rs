@@ -173,3 +173,30 @@ pub struct HubUpdateInfo {
     pub release_url: String,
     pub published_at: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UninstallItem {
+    pub id: String,
+    pub category: String,
+    pub label_he: String,
+    pub label_en: String,
+    pub path_display: String,
+    pub size_mb: Option<f64>,
+    pub default_checked: bool,
+    pub requires_external_uninstaller: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UninstallPlan {
+    pub workshop_root: String,
+    pub items: Vec<UninstallItem>,
+    pub preexisting_protected: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UninstallExecutionResult {
+    pub removed: Vec<String>,
+    pub launched_uninstallers: Vec<String>,
+    pub errors: Vec<String>,
+    pub will_exit: bool,
+}

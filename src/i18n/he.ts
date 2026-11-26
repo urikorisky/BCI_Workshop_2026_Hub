@@ -333,6 +333,31 @@ export const he = {
     closeBtn: 'סגור',
     errorPrefix: 'לא הצלחנו להוריד אוטומטית:',
   },
+  uninstall: {
+    triggerBtn: 'הסרת ה-Hub ורכיבי הסדנה',
+    dashboardBtn: 'הסרת ה-Hub וניקוי רכיבי הסדנה מהמחשב',
+    title: 'הסרת BCI Workshop Hub ורכיבי הסדנה',
+    subtitle:
+      'בחרו מה להסיר מהמחשב. תוכנות שהיו מותקנות אצלכם עוד לפני הפעלת ה-Hub מוגנות ואינן מופיעות כאן למחיקה.',
+    loading: 'בודק אילו רכיבים הותקנו על ידי ה-Hub...',
+    protectedPrefix: 'מוגן ולא יוסר (היה מותקן לפני ה-Hub):',
+    workshopDataHeading: 'קבצים וכלים בתיקיית הסדנה (הוסרו ללא עקבות)',
+    hubAppsHeading: 'תוכנות עצמאיות שהותקנו דרך ה-Hub בלבד',
+    externalUninstallerHint: 'ייפתח מסיר ההתקנה הרשמי של Windows',
+    emptyItems: 'לא נמצאו קבצים או כלים נוספים בתיקיית הסדנה.',
+    uninstallSelfLabel: 'הסר גם את אפליקציית BCI Workshop Hub עצמה',
+    uninstallSelfDescWindows:
+      'האפליקציה תיסגר ותפתח אוטומטית את אשף ההסרה של Windows.',
+    uninstallSelfDescMac:
+      'האפליקציה תיסגר ותעביר את BCI Workshop Hub אל סל המיחזור (Trash).',
+    confirmBtn: 'הסר את המסומנים',
+    runningBtn: 'מסיר רכיבים...',
+    cancelBtn: 'ביטול',
+    closeBtn: 'סגור',
+    doneRemoved: 'הוסר מהמחשב:',
+    doneLaunched: 'נפתחו אפי ההסרה של Windows עבור:',
+    doneErrors: 'שגיאות:',
+  },
 };
 
 export type Translations = typeof he;

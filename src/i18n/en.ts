@@ -326,4 +326,29 @@ export const en: Translations = {
     closeBtn: 'Close',
     errorPrefix: 'Automatic download failed:',
   },
+  uninstall: {
+    triggerBtn: 'Uninstall Hub & Workshop Tools',
+    dashboardBtn: 'Uninstall Hub & Clean Up Workshop Files',
+    title: 'Uninstall BCI Workshop Hub & Tools',
+    subtitle:
+      'Choose what else to remove from your computer. Anything installed before the Hub was first opened is protected and excluded.',
+    loading: 'Inspecting Hub-installed components...',
+    protectedPrefix: 'Protected (already installed before Hub):',
+    workshopDataHeading: 'Workshop Folders & Portable Tools',
+    hubAppsHeading: 'Standalone Apps Installed via the Hub Only',
+    externalUninstallerHint: 'Launches the official Windows uninstaller',
+    emptyItems: 'No workshop data or Hub-installed tools remain on disk.',
+    uninstallSelfLabel: 'Also uninstall BCI Workshop Hub itself',
+    uninstallSelfDescWindows:
+      'Closes the Hub and launches the Windows uninstaller automatically.',
+    uninstallSelfDescMac:
+      'Closes the Hub and moves BCI Workshop Hub.app to the Trash.',
+    confirmBtn: 'Uninstall Selected',
+    runningBtn: 'Removing selected items...',
+    cancelBtn: 'Cancel',
+    closeBtn: 'Close',
+    doneRemoved: 'Removed:',
+    doneLaunched: 'Opened Windows uninstaller for:',
+    doneErrors: 'Errors:',
+  },
 };

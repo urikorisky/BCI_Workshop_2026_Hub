@@ -5,6 +5,7 @@ mod models;
 mod scanner;
 mod system;
 mod telemetry;
+mod uninstall;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -23,6 +24,9 @@ pub fn run() {
             installer::launch_app,
             installer::check_hub_update,
             installer::download_and_open_hub_update,
+            uninstall::record_hub_installed,
+            uninstall::get_uninstall_plan,
+            uninstall::execute_uninstall,
             diagnostics::find_arduino_ports,
         ])
         .run(tauri::generate_context!())

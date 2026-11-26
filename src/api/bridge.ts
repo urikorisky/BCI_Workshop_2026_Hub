@@ -14,9 +14,11 @@ import type {
   SerialDeviceInfo,
   SystemGuardrails,
   TelemetryResponse,
+  UninstallExecutionResult,
+  UninstallPlan,
 } from '../types';
 
-export const HUB_VERSION = '0.1.6';
+export const HUB_VERSION = '0.1.7';
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -323,4 +325,62 @@ export async function downloadAndOpenHubUpdate(
     return `Downloads/${assetName} (preview)`;
   }
   return invoke<string>('download_and_open_hub_update', { downloadUrl, assetName });
+}
+
+export async function recordHubInstalled(id: ComponentId): Promise<void> {
+  if (!isTauriRuntime()) {
+    return;
+  }
+  await invoke<void>('record_hub_installed', { id });
+}
+
+export async function getUninstallPlan(): Promise<UninstallPlan> {
+  if (!isTauriRuntime()) {
+    return {
+      workshop_root: 'C:\\BCI_Workshop_2026',
+      preexisting_protected: ['Arduino IDE', 'GitHub Desktop'],
+      items: [
+        {
+          id: 'python_env',
+          category: 'workshop_data',
+          label_he: 'סביבת Python ו-JupyterLab של הסדנה (.venv + uv)',
+          label_en: 'Workshop Python & JupyterLab environment (.venv + uv)',
+          path_display: 'C:\\BCI_Workshop_2026\\.venv',
+          size_mb: 612.4,
+          default_checked: true,
+          requires_external_uninstaller: false,
+        },
+        {
+          id: 'openbci_gui_portable',
+          category: 'workshop_data',
+          label_he: 'OpenBCI GUI (עותק מקומי בתיקיית הסדנה)',
+          label_en: 'OpenBCI GUI (workshop portable folder)',
+          path_display: 'C:\\BCI_Workshop_2026\\tools\\OpenBCI_GUI',
+          size_mb: 245.0,
+          default_checked: true,
+          requires_external_uninstaller: false,
+        },
+      ],
+    };
+  }
+  return invoke<UninstallPlan>('get_uninstall_plan');
+}
+
+export async function executeUninstall(
+  selectedItemIds: string[],
+  uninstallHubSelf: boolean
+): Promise<UninstallExecutionResult> {
+  if (!isTauriRuntime()) {
+    await new Promise((r) => setTimeout(r, 500));
+    return {
+      removed: selectedItemIds,
+      launched_uninstallers: uninstallHubSelf ? ['BCI Workshop Hub (preview)'] : [],
+      errors: [],
+      will_exit: false,
+    };
+  }
+  return invoke<UninstallExecutionResult>('execute_uninstall', {
+    selectedItemIds,
+    uninstallHubSelf,
+  });
 }

@@ -19,6 +19,7 @@ import {
   getSystemGuardrails,
   installComponent,
   listenInstallProgress,
+  recordHubInstalled,
   runDiagnostics,
   scanInstalledComponents,
   uploadTelemetry,
@@ -211,6 +212,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           );
           if (confirmed) {
             succeededIds.add(id);
+            void recordHubInstalled(id);
           }
         } else {
           succeededIds.add(id);

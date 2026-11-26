@@ -166,3 +166,27 @@ export interface HubUpdateInfo {
   release_url: string;
   published_at?: string;
 }
+
+export interface UninstallItem {
+  id: string;
+  category: 'workshop_data' | 'hub_installed_app' | string;
+  label_he: string;
+  label_en: string;
+  path_display: string;
+  size_mb?: number;
+  default_checked: boolean;
+  requires_external_uninstaller: boolean;
+}
+
+export interface UninstallPlan {
+  workshop_root: string;
+  items: UninstallItem[];
+  preexisting_protected: string[];
+}
+
+export interface UninstallExecutionResult {
+  removed: string[];
+  launched_uninstallers: string[];
+  errors: string[];
+  will_exit: boolean;
+}

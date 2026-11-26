@@ -590,12 +590,18 @@ pub async fn install_component(
     id: String,
     manifest: Manifest,
 ) -> Result<InstallActionResult, String> {
-    match id.as_str() {
+    let result = match id.as_str() {
         "python_env" => install_python_env(&app, &manifest).await,
         "jupyterlab" => install_jupyterlab(&app, &manifest).await,
         "arduino_ide" => install_arduino_stack(&app, &manifest).await,
         _ => install_generic_component(&app, &manifest, &id).await,
+    };
+    if let Ok(ref res) = result {
+        if res.status == "completed" {
+            crate::uninstall::record_component_installed(&id);
+        }
     }
+    result
 }
 
 #[tauri::command]

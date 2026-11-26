@@ -10,6 +10,7 @@ import {
   ChevronDown,
   FolderSync,
   Settings2,
+  Trash2,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import {
@@ -29,6 +30,7 @@ interface DashboardViewProps {
   selectedApps: ComponentId[];
   onGoOnboarding: () => void;
   onGoDiagnostics: () => void;
+  onOpenUninstall: () => void;
 }
 
 type LaunchableAppId =
@@ -57,6 +59,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   selectedApps,
   onGoOnboarding,
   onGoDiagnostics,
+  onOpenUninstall,
 }) => {
   const { t } = useI18n();
   const [shortcutMsg, setShortcutMsg] = useState<string | null>(null);
@@ -265,6 +268,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               >
                 <FolderSync className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                 <span>{syncing ? t.dashboard.syncing : t.dashboard.syncMaterialsBtn}</span>
+              </button>
+              <button
+                type="button"
+                onClick={onOpenUninstall}
+                className="inline-flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-bold text-rose-800 hover:bg-rose-100"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{t.uninstall.dashboardBtn}</span>
               </button>
               {syncMsg && (
                 <span className="text-xs font-medium text-emerald-700" dir="ltr">

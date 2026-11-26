@@ -469,5 +469,6 @@ pub async fn scan_installed_components() -> Result<Vec<ComponentScanStatus>, Str
         notes: None,
     });
 
+    crate::uninstall::ensure_baseline_ledger(&results);
     Ok(results)
 }
