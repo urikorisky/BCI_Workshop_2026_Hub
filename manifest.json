@@ -2,7 +2,7 @@
   "manifest_version": "1.0.0",
   "workshop_year": 2026,
   "urls": {
-    "gitbook": "https://urikorisky.gitbook.io/bci-workshop-2026",
+    "gitbook": "https://urikorisky.gitbook.io/bci-workshop-2026/",
     "student_repo": "https://github.com/urikorisky/BIU_BCI_Workshop_2026_StudentResources",
     "telemetry_endpoint": "https://script.google.com/macros/s/AKfycbzIfp6SoK8jJ7CnXMHO_ukA9pzFDEkyPpf1aeFGRbYBiys19R73qJkBZlt_SxPzc-jL/exec"
   },

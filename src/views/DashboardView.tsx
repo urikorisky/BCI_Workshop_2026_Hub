@@ -68,9 +68,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [helpModalOpen, setHelpModalOpen] = useState(false);
 
   const scanMap = new Map(scans.map((s) => [s.id, s]));
-  const gitbookUrl = manifest?.urls.gitbook ?? 'https://urikorisky.gitbook.io/bci-workshop-2026';
+  const gitbookUrl = manifest?.urls.gitbook ?? 'https://urikorisky.gitbook.io/bci-workshop-2026/';
   const studentRepoUrl =
-    manifest?.urls.student_repo ?? 'https://github.com/urikorisky/BCI_Workshop_2026_Student_Facing';
+    manifest?.urls.student_repo ??
+    'https://github.com/urikorisky/BIU_BCI_Workshop_2026_StudentResources';
 
   const handleShortcut = async () => {
     try {
