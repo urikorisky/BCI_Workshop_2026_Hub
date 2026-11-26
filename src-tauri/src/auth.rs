@@ -1,16 +1,24 @@
 use crate::models::AuthUser;
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine as _};
 use rand::RngCore;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
+use std::path::PathBuf;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 
 #[derive(Debug, Deserialize)]
 struct TokenExchangeResponse {
     id_token: Option<String>,
+    refresh_token: Option<String>,
     error: Option<String>,
     error_description: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct StoredAuthSession {
+    hub_version: String,
+    user: AuthUser,
 }
 
 #[derive(Debug, Deserialize)]
@@ -90,7 +98,7 @@ pub async fn start_google_sign_in(
     let state = generate_random_b64(24);
 
     let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&code_challenge={}&code_challenge_method=S256&state={}&prompt=select_account",
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id={}&redirect_uri={}&response_type=code&scope={}&code_challenge={}&code_challenge_method=S256&state={}&access_type=offline&prompt=select_account%20consent",
         urlencoding::encode(&resolved_client_id),
         urlencoding::encode(&redirect_uri),
         urlencoding::encode("openid email profile"),
@@ -187,5 +195,139 @@ pub async fn start_google_sign_in(
         name,
         id_token,
         picture: claims.picture,
+        refresh_token: token_res.refresh_token,
     })
+}
+
+fn resolve_client_id(client_id: &str) -> Option<String> {
+    option_env!("GOOGLE_CLIENT_ID")
+        .filter(|s| !s.trim().is_empty())
+        .map(|s| s.to_string())
+        .or_else(|| {
+            let trimmed = client_id.trim().to_string();
+            if trimmed.is_empty() || trimmed.contains("REPLACE_WITH") {
+                None
+            } else {
+                Some(trimmed)
+            }
+        })
+}
+
+fn auth_session_path() -> PathBuf {
+    dirs::data_local_dir()
+        .unwrap_or_else(std::env::temp_dir)
+        .join("BCI_Workshop_2026_Hub")
+        .join("auth_session.json")
+}
+
+#[tauri::command]
+pub async fn save_auth_session(user: AuthUser, hub_version: String) -> Result<(), String> {
+    let path = auth_session_path();
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("Failed creating session dir: {e}"))?;
+    }
+    let stored = StoredAuthSession { hub_version, user };
+    let json = serde_json::to_string_pretty(&stored).map_err(|e| e.to_string())?;
+    std::fs::write(&path, json).map_err(|e| format!("Failed saving auth session: {e}"))
+}
+
+pub fn clear_auth_session_file() {
+    let path = auth_session_path();
+    if path.exists() {
+        let _ = std::fs::remove_file(&path);
+    }
+    if let Some(parent) = path.parent() {
+        let is_empty = std::fs::read_dir(parent)
+            .map(|mut d| d.next().is_none())
+            .unwrap_or(false);
+        if is_empty {
+            let _ = std::fs::remove_dir(parent);
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn clear_auth_session() -> Result<(), String> {
+    clear_auth_session_file();
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn load_auth_session(
+    client_id: String,
+    hub_version: String,
+) -> Result<Option<AuthUser>, String> {
+    let path = auth_session_path();
+    if !path.exists() {
+        return Ok(None);
+    }
+    let raw = match std::fs::read_to_string(&path) {
+        Ok(s) => s,
+        Err(_) => return Ok(None),
+    };
+    let mut stored: StoredAuthSession = match serde_json::from_str(&raw) {
+        Ok(s) => s,
+        Err(_) => {
+            let _ = std::fs::remove_file(&path);
+            return Ok(None);
+        }
+    };
+
+    if stored.hub_version.trim() != hub_version.trim() {
+        let _ = std::fs::remove_file(&path);
+        return Ok(None);
+    }
+
+    if let (Some(ref refresh_token), Some(resolved_client_id)) =
+        (stored.user.refresh_token.clone(), resolve_client_id(&client_id))
+    {
+        let client_secret = option_env!("GOOGLE_CLIENT_SECRET").unwrap_or("");
+        let mut form_params = vec![
+            ("refresh_token", refresh_token.as_str()),
+            ("client_id", resolved_client_id.as_str()),
+            ("grant_type", "refresh_token"),
+        ];
+        if !client_secret.trim().is_empty() {
+            form_params.push(("client_secret", client_secret));
+        }
+
+        if let Ok(client) = reqwest::Client::builder()
+            .timeout(std::time::Duration::from_secs(8))
+            .build()
+        {
+            if let Ok(resp) = client
+                .post("https://oauth2.googleapis.com/token")
+                .form(&form_params)
+                .send()
+                .await
+            {
+                if let Ok(token_res) = resp.json::<TokenExchangeResponse>().await {
+                    if let Some(err) = token_res.error {
+                        if err == "invalid_grant" {
+                            let _ = std::fs::remove_file(&path);
+                            return Ok(None);
+                        }
+                    } else if let Some(new_id_token) = token_res.id_token {
+                        stored.user.id_token = new_id_token.clone();
+                        if let Ok(claims) = decode_jwt_claims(&new_id_token) {
+                            if let Some(email) = claims.email {
+                                stored.user.email = email;
+                            }
+                            if let Some(name) = claims.name {
+                                stored.user.name = name;
+                            }
+                            if claims.picture.is_some() {
+                                stored.user.picture = claims.picture;
+                            }
+                        }
+                        if let Ok(updated_json) = serde_json::to_string_pretty(&stored) {
+                            let _ = std::fs::write(&path, updated_json);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(Some(stored.user))
 }

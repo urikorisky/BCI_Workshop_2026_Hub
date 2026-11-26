@@ -202,9 +202,9 @@
       "version": "3.9",
       "approx_size_mb": 5,
       "windows": {
-        "url": "https://www.wch-ic.com/downloads/CH341SER_EXE.html",
+        "url": "https://cdn.sparkfun.com/assets/learn_tutorials/8/4/4/CH341SER.EXE",
         "sha256": "",
-        "kind": "browser_page"
+        "kind": "installer_exe"
       },
       "macos_arm64": {
         "url": "https://www.wch-ic.com/downloads/CH34XSER_MAC_ZIP.html",

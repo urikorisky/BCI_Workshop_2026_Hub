@@ -6,12 +6,13 @@ import type { AuthUser, Manifest } from '../types';
 
 interface SignInViewProps {
   manifest: Manifest | null;
-  onSignedIn: (user: AuthUser) => void;
+  onSignedIn: (user: AuthUser, rememberMe: boolean) => void;
 }
 
 export const SignInView: React.FC<SignInViewProps> = ({ manifest, onSignedIn }) => {
   const { t } = useI18n();
   const [consented, setConsented] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,7 +38,7 @@ export const SignInView: React.FC<SignInViewProps> = ({ manifest, onSignedIn }) 
           optionalAppsSelected: [],
         }).catch(() => {});
       }
-      onSignedIn(user);
+      onSignedIn(user, rememberMe);
     } catch (err) {
       setError(String(err));
     } finally {
@@ -102,6 +103,16 @@ export const SignInView: React.FC<SignInViewProps> = ({ manifest, onSignedIn }) 
               className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
             />
             <span>{t.signIn.consentCheckbox}</span>
+          </label>
+
+          <label className="mt-2.5 flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-700">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
+            />
+            <span>{t.signIn.rememberMe}</span>
           </label>
         </div>
 

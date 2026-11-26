@@ -656,6 +656,7 @@ pub async fn execute_uninstall(
 
     let mut will_exit = false;
     if uninstall_hub_self {
+        crate::auth::clear_auth_session_file();
         #[cfg(target_os = "windows")]
         {
             match launch_windows_uninstaller("^BCI Workshop Hub$", 1) {

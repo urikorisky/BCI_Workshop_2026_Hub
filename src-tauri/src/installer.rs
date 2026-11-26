@@ -578,10 +578,14 @@ async fn install_generic_component(
     }
 
     open_local_installer(app, &dest)?;
-    let manual_action_type = match artifact.kind.as_str() {
-        "dmg" => "macos_dmg_drag",
-        "pkg" => "macos_pkg_wizard",
-        _ => "windows_installer_wizard",
+    let manual_action_type = if id == "drivers" && cfg!(target_os = "windows") {
+        "windows_uac_driver"
+    } else {
+        match artifact.kind.as_str() {
+            "dmg" => "macos_dmg_drag",
+            "pkg" => "macos_pkg_wizard",
+            _ => "windows_installer_wizard",
+        }
     };
     Ok(InstallActionResult {
         id: id.to_string(),

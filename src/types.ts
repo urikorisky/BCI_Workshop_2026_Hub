@@ -61,6 +61,7 @@ export interface AuthUser {
   name: string;
   id_token: string;
   picture?: string;
+  refresh_token?: string;
 }
 
 export interface SystemGuardrails {

@@ -18,7 +18,7 @@ import type {
   UninstallPlan,
 } from '../types';
 
-export const HUB_VERSION = '0.1.8';
+export const HUB_VERSION = '0.1.9';
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -65,6 +65,53 @@ export async function startGoogleSignIn(clientId: string): Promise<AuthUser> {
     };
   }
   return invoke<AuthUser>('start_google_sign_in', { clientId });
+}
+
+const PREVIEW_SESSION_KEY = 'bci_workshop_2026_auth_session';
+
+export async function saveAuthSession(user: AuthUser, hubVersion: string): Promise<void> {
+  if (!isTauriRuntime()) {
+    try {
+      localStorage.setItem(PREVIEW_SESSION_KEY, JSON.stringify({ hubVersion, user }));
+    } catch {
+      // ignore storage errors in preview
+    }
+    return;
+  }
+  await invoke('save_auth_session', { user, hubVersion });
+}
+
+export async function loadAuthSession(
+  clientId: string,
+  hubVersion: string,
+): Promise<AuthUser | null> {
+  if (!isTauriRuntime()) {
+    try {
+      const raw = localStorage.getItem(PREVIEW_SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { hubVersion?: string; user?: AuthUser };
+      if (parsed.hubVersion !== hubVersion || !parsed.user) {
+        localStorage.removeItem(PREVIEW_SESSION_KEY);
+        return null;
+      }
+      return parsed.user;
+    } catch {
+      return null;
+    }
+  }
+  return invoke<AuthUser | null>('load_auth_session', { clientId, hubVersion });
+}
+
+export async function clearAuthSession(): Promise<void> {
+  if (!isTauriRuntime()) {
+    try {
+      localStorage.removeItem(PREVIEW_SESSION_KEY);
+    } catch {
+      // ignore
+    }
+    return;
+  }
+  await invoke('clear_auth_session');
 }
 
 export async function scanInstalledComponents(): Promise<ComponentScanStatus[]> {

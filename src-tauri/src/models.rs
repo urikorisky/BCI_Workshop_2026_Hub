@@ -67,6 +67,8 @@ pub struct AuthUser {
     pub name: String,
     pub id_token: String,
     pub picture: Option<String>,
+    #[serde(default)]
+    pub refresh_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -31,6 +31,7 @@ export const en: Translations = {
     ],
     consentCheckbox:
       'I understand and consent to signing in and submitting a technical diagnostic report for workshop support.',
+    rememberMe: 'Remember me on this computer (stay signed in until the next app update)',
     signInButton: 'Sign in with Google',
     signingIn: 'Waiting for browser sign-in...',
     signOut: 'Sign out',

@@ -2,7 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { LanguageProvider, useI18n } from './i18n';
 import { ThemeProvider } from './theme';
-import { checkHubUpdate, fetchManifest, getSystemGuardrails } from './api/bridge';
+import {
+  HUB_VERSION,
+  checkHubUpdate,
+  clearAuthSession,
+  fetchManifest,
+  getSystemGuardrails,
+  loadAuthSession,
+  saveAuthSession,
+} from './api/bridge';
 import { Header } from './components/Header';
 import { UpdatePromptModal } from './components/UpdatePromptModal';
 import { UninstallModal } from './components/UninstallModal';
@@ -32,7 +40,19 @@ const AppShell: React.FC = () => {
   const [osName, setOsName] = useState<string>('');
 
   useEffect(() => {
-    void fetchManifest().then(setManifest);
+    let cancelled = false;
+    void fetchManifest().then((loadedManifest) => {
+      if (cancelled) return;
+      setManifest(loadedManifest);
+      void loadAuthSession(loadedManifest.oauth_client_id ?? '', HUB_VERSION)
+        .then((savedUser) => {
+          if (!cancelled && savedUser) {
+            setUser(savedUser);
+            setScreen((prev) => (prev === 'sign_in' ? 'onboarding' : prev));
+          }
+        })
+        .catch(() => {});
+    });
     void getSystemGuardrails()
       .then((g) => setOsName(g.os_name))
       .catch(() => {});
@@ -46,14 +66,23 @@ const AppShell: React.FC = () => {
       .catch(() => {
         // Silent failure if offline on launch
       });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const handleSignedIn = (authedUser: AuthUser) => {
+  const handleSignedIn = (authedUser: AuthUser, rememberMe: boolean) => {
     setUser(authedUser);
     setScreen('onboarding');
+    if (rememberMe) {
+      void saveAuthSession(authedUser, HUB_VERSION).catch(() => {});
+    } else {
+      void clearAuthSession().catch(() => {});
+    }
   };
 
   const handleSignOut = () => {
+    void clearAuthSession().catch(() => {});
     setUser(null);
     setScreen('sign_in');
   };
