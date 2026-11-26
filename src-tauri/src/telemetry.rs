@@ -13,7 +13,8 @@ pub async fn upload_telemetry(payload: TelemetryPayload) -> Result<TelemetryResp
     let resolved_os_arch = if payload.os_arch.trim().is_empty() {
         let os_name = System::name().unwrap_or_else(|| std::env::consts::OS.to_string());
         let os_ver = System::os_version().unwrap_or_default();
-        format!("{os_name} {os_ver} ({})".trim(), std::env::consts::ARCH)
+        format!("{os_name} {os_ver} ({})", std::env::consts::ARCH)
+            .trim()
             .replace("  ", " ")
     } else {
         payload.os_arch.clone()

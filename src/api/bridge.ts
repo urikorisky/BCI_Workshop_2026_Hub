@@ -139,7 +139,7 @@ export async function runDiagnostics(selectedApps: ComponentId[]): Promise<Diagn
     return {
       timestamp: new Date().toISOString(),
       os_arch: 'windows / x86_64 (preview)',
-      hub_version: '0.1.0',
+      hub_version: '0.1.1',
       overall_status: 'warn',
       checks: [
         {
@@ -222,7 +222,7 @@ export async function uploadTelemetry(params: {
       endpoint: params.endpoint,
       id_token: params.user.id_token,
       event_type: params.eventType,
-      hub_version: '0.1.0',
+      hub_version: '0.1.1',
       overall_status: params.report?.overall_status ?? (params.eventType === 'sign_in' ? 'SIGNED_IN' : ''),
       os_arch: params.report?.os_arch ?? params.osArch ?? '',
       checks: params.report?.checks ?? [],
