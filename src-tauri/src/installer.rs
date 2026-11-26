@@ -8,7 +8,8 @@ use crate::scanner::{
 };
 use crate::system::{
     default_workshop_root, workshop_arduino_cli, workshop_downloads_dir, workshop_tools_dir,
-    workshop_uv_bin, workshop_venv_dir, workshop_venv_python,
+    workshop_uv_bin, workshop_uv_cache_dir, workshop_uv_python_dir, workshop_venv_dir,
+    workshop_venv_python,
 };
 use futures_util::StreamExt;
 use sha2::{Digest, Sha256};
@@ -179,6 +180,26 @@ async fn ensure_uv(app: &tauri::AppHandle, manifest: &Manifest) -> Result<PathBu
     Err("uv binary missing after archive extraction".to_string())
 }
 
+fn find_extracted_uv_python(uv_py_dir: &Path, target_minor: &str) -> Option<PathBuf> {
+    let prefix = format!("cpython-{target_minor}.");
+    let entries = std::fs::read_dir(uv_py_dir).ok()?;
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !name.starts_with(&prefix) {
+            continue;
+        }
+        let path = entry.path();
+        #[cfg(target_os = "windows")]
+        let candidate = path.join("python.exe");
+        #[cfg(not(target_os = "windows"))]
+        let candidate = path.join("bin").join("python3");
+        if candidate.is_file() {
+            return Some(candidate);
+        }
+    }
+    None
+}
+
 async fn install_python_env(
     app: &tauri::AppHandle,
     manifest: &Manifest,
@@ -188,6 +209,18 @@ async fn install_python_env(
     let uv_str = uv_bin.to_string_lossy().to_string();
     let venv_dir = workshop_venv_dir();
     let venv_str = venv_dir.to_string_lossy().to_string();
+
+    let uv_py_dir = workshop_uv_python_dir();
+    let uv_cache_dir = workshop_uv_cache_dir();
+    std::fs::create_dir_all(&uv_py_dir).map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(&uv_cache_dir).map_err(|e| e.to_string())?;
+    let uv_py_str = uv_py_dir.to_string_lossy().to_string();
+    let uv_cache_str = uv_cache_dir.to_string_lossy().to_string();
+    let uv_envs = [
+        ("UV_PYTHON_INSTALL_DIR", uv_py_str.as_str()),
+        ("UV_CACHE_DIR", uv_cache_str.as_str()),
+        ("UV_LINK_MODE", "copy"),
+    ];
 
     if !workshop_venv_python().exists() {
         if let Some((sys_prog, sys_args, ver)) = find_compatible_system_python() {
@@ -219,19 +252,45 @@ async fn install_python_env(
                     manifest.python.target_version
                 ),
             );
-            let (ok_py, _, err_py) =
-                run_silent_command(&uv_str, &["python", "install", &manifest.python.target_version])
-                    .ok_or_else(|| "Failed running uv python install".to_string())?;
-            if !ok_py {
-                return Err(format!("uv python install failed: {err_py}"));
+            let mut extracted_py =
+                find_extracted_uv_python(&uv_py_dir, &manifest.python.target_version);
+            let mut install_err = String::new();
+
+            if extracted_py.is_none() {
+                let (ok_py, _, err_py) = run_silent_command_with_env(
+                    &uv_str,
+                    &[
+                        "python",
+                        "install",
+                        &manifest.python.target_version,
+                        "--no-bin",
+                        "--no-registry",
+                        "--install-dir",
+                        &uv_py_str,
+                    ],
+                    &uv_envs,
+                )
+                .ok_or_else(|| "Failed running uv python install".to_string())?;
+                install_err = err_py;
+                // Re-check extracted binary even if uv complained creating minor-version link (Windows os error 448).
+                extracted_py =
+                    find_extracted_uv_python(&uv_py_dir, &manifest.python.target_version);
+                if !ok_py && extracted_py.is_none() {
+                    return Err(format!("uv python install failed: {install_err}"));
+                }
             }
-            let (ok_v, _, err_v) = run_silent_command(
-                &uv_str,
-                &["venv", &venv_str, "--python", &manifest.python.target_version],
-            )
-            .ok_or_else(|| "Failed creating uv venv".to_string())?;
+
+            let py_exe = extracted_py.ok_or_else(|| {
+                format!("uv python binary missing after install ({install_err})")
+            })?;
+            let py_exe_str = py_exe.to_string_lossy().to_string();
+
+            emit_progress(app, "python_env", "venv", 58, "Creating isolated .venv...");
+            let (ok_v, _, err_v) =
+                run_silent_command(&py_exe_str, &["-m", "venv", &venv_str])
+                    .ok_or_else(|| "Failed invoking extracted Python for venv".to_string())?;
             if !ok_v {
-                return Err(format!("uv venv failed: {err_v}"));
+                return Err(format!("Creating .venv failed: {err_v}"));
             }
         }
     }
@@ -245,11 +304,18 @@ async fn install_python_env(
     );
 
     let venv_py_str = workshop_venv_python().to_string_lossy().to_string();
-    let mut pip_args: Vec<&str> = vec!["pip", "install", "--python", &venv_py_str];
+    let mut pip_args: Vec<&str> = vec![
+        "pip",
+        "install",
+        "--python",
+        &venv_py_str,
+        "--link-mode",
+        "copy",
+    ];
     for pkg in &manifest.python.core_packages {
         pip_args.push(pkg.as_str());
     }
-    let (ok_pip, stdout_pip, err_pip) = run_silent_command(&uv_str, &pip_args)
+    let (ok_pip, stdout_pip, err_pip) = run_silent_command_with_env(&uv_str, &pip_args, &uv_envs)
         .ok_or_else(|| "Failed running uv pip install".to_string())?;
     if !ok_pip {
         return Err(format!("Package installation failed: {err_pip}"));
@@ -277,12 +343,31 @@ async fn install_jupyterlab(
     let uv_str = uv_bin.to_string_lossy().to_string();
     let venv_py_str = workshop_venv_python().to_string_lossy().to_string();
 
+    let uv_py_dir = workshop_uv_python_dir();
+    let uv_cache_dir = workshop_uv_cache_dir();
+    let _ = std::fs::create_dir_all(&uv_py_dir);
+    let _ = std::fs::create_dir_all(&uv_cache_dir);
+    let uv_py_str = uv_py_dir.to_string_lossy().to_string();
+    let uv_cache_str = uv_cache_dir.to_string_lossy().to_string();
+    let uv_envs = [
+        ("UV_PYTHON_INSTALL_DIR", uv_py_str.as_str()),
+        ("UV_CACHE_DIR", uv_cache_str.as_str()),
+        ("UV_LINK_MODE", "copy"),
+    ];
+
     emit_progress(app, "jupyterlab", "packages", 50, "Installing JupyterLab + ipywidgets...");
-    let mut args: Vec<&str> = vec!["pip", "install", "--python", &venv_py_str];
+    let mut args: Vec<&str> = vec![
+        "pip",
+        "install",
+        "--python",
+        &venv_py_str,
+        "--link-mode",
+        "copy",
+    ];
     for pkg in &manifest.python.jupyter_packages {
         args.push(pkg.as_str());
     }
-    let (ok, out, err) = run_silent_command(&uv_str, &args)
+    let (ok, out, err) = run_silent_command_with_env(&uv_str, &args, &uv_envs)
         .ok_or_else(|| "Failed running uv pip install for JupyterLab".to_string())?;
     if !ok {
         return Err(format!("JupyterLab installation failed: {err}"));

@@ -185,21 +185,43 @@ pub fn detect_thonny_path() -> Option<String> {
     }
 }
 
+fn find_entry_recursive(dir: &std::path::Path, target_name: &str, max_depth: usize) -> Option<String> {
+    if !dir.exists() {
+        return None;
+    }
+    let entries = std::fs::read_dir(dir).ok()?;
+    let mut subdirs = Vec::new();
+    for entry in entries.flatten() {
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.eq_ignore_ascii_case(target_name) {
+            return Some(entry.path().to_string_lossy().to_string());
+        }
+        if max_depth > 0 && entry.path().is_dir() && !name.ends_with(".app") {
+            subdirs.push(entry.path());
+        }
+    }
+    for sub in subdirs {
+        if let Some(found) = find_entry_recursive(&sub, target_name, max_depth - 1) {
+            return Some(found);
+        }
+    }
+    None
+}
+
 pub fn detect_openbci_gui_path() -> Option<String> {
     let tools = workshop_tools_dir().join("OpenBCI_GUI");
     #[cfg(target_os = "windows")]
     {
-        first_existing_path(vec![
-            tools.join("OpenBCI_GUI.exe"),
-            PathBuf::from(r"C:\Program Files\OpenBCI_GUI\OpenBCI_GUI.exe"),
-        ])
+        find_entry_recursive(&tools, "OpenBCI_GUI.exe", 2).or_else(|| {
+            first_existing_path(vec![
+                PathBuf::from(r"C:\Program Files\OpenBCI_GUI\OpenBCI_GUI.exe"),
+            ])
+        })
     }
     #[cfg(target_os = "macos")]
     {
-        first_existing_path(vec![
-            PathBuf::from("/Applications/OpenBCI_GUI.app"),
-            tools.join("OpenBCI_GUI.app"),
-        ])
+        first_existing_path(vec![PathBuf::from("/Applications/OpenBCI_GUI.app")])
+            .or_else(|| find_entry_recursive(&tools, "OpenBCI_GUI.app", 2))
     }
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {
@@ -211,17 +233,12 @@ pub fn detect_lab_recorder_path() -> Option<String> {
     let tools = workshop_tools_dir().join("LabRecorder");
     #[cfg(target_os = "windows")]
     {
-        first_existing_path(vec![
-            tools.join("LabRecorder.exe"),
-            tools.join("LabRecorder").join("LabRecorder.exe"),
-        ])
+        find_entry_recursive(&tools, "LabRecorder.exe", 2)
     }
     #[cfg(target_os = "macos")]
     {
-        first_existing_path(vec![
-            PathBuf::from("/Applications/LabRecorder.app"),
-            tools.join("LabRecorder.app"),
-        ])
+        first_existing_path(vec![PathBuf::from("/Applications/LabRecorder.app")])
+            .or_else(|| find_entry_recursive(&tools, "LabRecorder.app", 2))
     }
     #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
     {

@@ -85,6 +85,10 @@ export const he = {
       'זוהה Arduino IDE מותקן במחשב ✓ — השאירו מסומן רק כדי להתקין אוטומטית את ספריות הסדנה (arduino:avr, Servo, AccelStepper) מבלי להתקין מחדש את Arduino IDE.',
     preScanUploading: 'שולח דוח מצב ראשוני למרצה...',
     preScanUploadOk: 'דוח מצב ראשוני נשלח למרצה ✓',
+    installFailedTitle: 'התקנת חלק מהרכיבים נכשלה:',
+    installErrorAutoSent: 'דוח שגיאה אוטומטי עם יומן ההתקנה נשלח למרצה ✓',
+    installErrorSendFailed: 'לא הצלחנו לשלוח אוטומטית את דוח השגיאה — תוכלו ללחוץ על "נתקעתי" בדף הבא.',
+    installAllSuccess: 'כל הרכיבים שנבחרו הותקנו בהצלחה ✓',
   },
   components: {
     python_env: {

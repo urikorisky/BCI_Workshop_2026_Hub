@@ -212,9 +212,16 @@ export async function runDiagnostics(selectedApps: ComponentId[]): Promise<Diagn
 export async function uploadTelemetry(params: {
   endpoint: string;
   user: AuthUser;
-  eventType: 'sign_in' | 'pre_scan_diagnostics' | 'diagnostics' | 'help_request';
+  eventType:
+    | 'sign_in'
+    | 'pre_scan_diagnostics'
+    | 'diagnostics'
+    | 'install_error'
+    | 'help_request';
   report?: DiagnosticReport;
   osArch?: string;
+  overallStatus?: string;
+  rawLogs?: string;
   optionalAppsSelected: ComponentId[];
   studentNote?: string;
 }): Promise<TelemetryResponse> {
@@ -231,13 +238,16 @@ export async function uploadTelemetry(params: {
       endpoint: params.endpoint,
       id_token: params.user.id_token,
       event_type: params.eventType,
-      hub_version: '0.1.2',
-      overall_status: params.report?.overall_status ?? (params.eventType === 'sign_in' ? 'SIGNED_IN' : ''),
+      hub_version: '0.1.3',
+      overall_status:
+        params.overallStatus ??
+        params.report?.overall_status ??
+        (params.eventType === 'sign_in' ? 'SIGNED_IN' : ''),
       os_arch: params.report?.os_arch ?? params.osArch ?? '',
       checks: params.report?.checks ?? [],
       optional_apps_selected: params.optionalAppsSelected,
       student_note: params.studentNote ?? '',
-      raw_logs: params.report?.raw_logs ?? '',
+      raw_logs: params.rawLogs ?? params.report?.raw_logs ?? '',
     },
   });
 }

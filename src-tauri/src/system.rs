@@ -27,6 +27,14 @@ pub fn workshop_downloads_dir() -> PathBuf {
     default_workshop_root().join("downloads")
 }
 
+pub fn workshop_uv_python_dir() -> PathBuf {
+    default_workshop_root().join("uv-python")
+}
+
+pub fn workshop_uv_cache_dir() -> PathBuf {
+    default_workshop_root().join("uv-cache")
+}
+
 pub fn workshop_venv_python() -> PathBuf {
     #[cfg(target_os = "windows")]
     {

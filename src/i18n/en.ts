@@ -78,6 +78,10 @@ export const en: Translations = {
       'Arduino IDE is already installed ✓ — keep checked to automatically add the workshop libraries (arduino:avr, Servo, AccelStepper) without reinstalling Arduino IDE.',
     preScanUploading: 'Uploading initial system report...',
     preScanUploadOk: 'Initial system report sent to instructor ✓',
+    installFailedTitle: 'Installation failed for one or more components:',
+    installErrorAutoSent: 'An automatic error report with the install log was sent to the instructor ✓',
+    installErrorSendFailed: 'Could not auto-upload the error report — you can use the Help button anytime.',
+    installAllSuccess: 'All selected components installed successfully ✓',
   },
   components: {
     python_env: {

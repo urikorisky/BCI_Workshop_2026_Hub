@@ -7,6 +7,7 @@ import {
   Wifi,
   FolderCheck,
   AlertTriangle,
+  AlertCircle,
   Download,
   ArrowRight,
   Terminal,
@@ -78,6 +79,13 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   const [preScanTelemetryState, setPreScanTelemetryState] = useState<'idle' | 'sending' | 'sent'>(
     'idle'
   );
+  const [failedComponents, setFailedComponents] = useState<{ id: ComponentId; message: string }[]>(
+    []
+  );
+  const [installSummaryState, setInstallSummaryState] = useState<'idle' | 'success' | 'error'>(
+    'idle'
+  );
+  const [errorReportStatus, setErrorReportStatus] = useState<'idle' | 'sent' | 'failed'>('idle');
   const [activeModal, setActiveModal] = useState<PreActionModalPayload | null>(null);
   const [pendingResolver, setPendingResolver] = useState<((ok: boolean) => void) | null>(null);
   const hasAutoUploadedPreScan = useRef(false);
@@ -101,7 +109,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       setScans(s);
       onScanUpdated(s);
       const autoDefaults = REQUIRED_IDS.filter((id) => needsSetupAction(id, s));
-      if (selectedApps.length === 0 && autoDefaults.length > 0) {
+      if (selectedApps.length === 0 && autoDefaults.length > 0 && !autoUploadBaseline) {
+        onSelectedAppsChange(autoDefaults);
+      } else if (autoUploadBaseline && selectedApps.length === 0 && autoDefaults.length > 0) {
         onSelectedAppsChange(autoDefaults);
       }
 
@@ -168,28 +178,84 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     if (!manifest || selectedApps.length === 0) return;
     setInstalling(true);
     setLogs([]);
+    setFailedComponents([]);
+    setInstallSummaryState('idle');
+    setErrorReportStatus('idle');
+
+    const sessionLogs: string[] = [];
+    const pushSessionLog = (line: string) => {
+      sessionLogs.push(line);
+      appendLog(line);
+    };
+
+    const failures: { id: ComponentId; message: string }[] = [];
+    const succeededIds = new Set<ComponentId>();
+
     for (const id of selectedApps) {
-      appendLog(`--- ${t.components[id].title} ---`);
+      pushSessionLog(`--- ${t.components[id].title} ---`);
       try {
         const res = await installComponent(id, manifest);
-        appendLog(res.message);
-        if (res.status === 'needs_manual_step' && res.manual_action_type) {
+        pushSessionLog(res.message);
+        if (res.status === 'failed') {
+          failures.push({ id, message: res.message });
+        } else if (res.status === 'needs_manual_step' && res.manual_action_type) {
           const confirmed = await waitForManualStep({
             componentId: id,
             actionType: res.manual_action_type,
             manualUrl: res.manual_url,
           });
-          appendLog(
+          pushSessionLog(
             confirmed
               ? `[${id}] User confirmed manual step complete.`
               : `[${id}] Skipped manual step.`
           );
+          if (confirmed) {
+            succeededIds.add(id);
+          }
+        } else {
+          succeededIds.add(id);
         }
       } catch (err) {
-        appendLog(`[${id}] ERROR: ${String(err)}`);
+        const errText = String(err);
+        pushSessionLog(`[${id}] ERROR: ${errText}`);
+        failures.push({ id, message: errText });
       }
     }
+
     await runScan(false);
+    // Keep only failed/pending items selected so the user isn't prompted to reinstall succeeded ones.
+    onSelectedAppsChange(selectedApps.filter((id) => !succeededIds.has(id)));
+    setFailedComponents(failures);
+
+    if (failures.length > 0) {
+      setInstallSummaryState('error');
+      const endpoint = manifest.urls.telemetry_endpoint;
+      if (endpoint && !endpoint.includes('REPLACE_WITH')) {
+        try {
+          const osArch = guardrails
+            ? `${guardrails.os_name} ${guardrails.os_version} (${guardrails.arch})`.trim()
+            : '';
+          const diag = await runDiagnostics(selectedApps).catch(() => undefined);
+          const resp = await uploadTelemetry({
+            endpoint,
+            user,
+            eventType: 'install_error',
+            report: diag,
+            osArch,
+            overallStatus: 'INSTALL_ERROR',
+            optionalAppsSelected: selectedApps,
+            studentNote: `Auto-report: install failed for ${failures.map((f) => `${f.id} (${f.message})`).join('; ')}`,
+            rawLogs: `${sessionLogs.join('\n')}\n\n${diag?.raw_logs ?? ''}`.trim(),
+          });
+          setErrorReportStatus(resp.ok ? 'sent' : 'failed');
+        } catch {
+          setErrorReportStatus('failed');
+        }
+      }
+    } else {
+      setInstallSummaryState('success');
+    }
+
     setInstalling(false);
   };
 
@@ -446,6 +512,39 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             >
               {logs.join('\n')}
             </pre>
+          </div>
+        )}
+
+        {installSummaryState === 'error' && failedComponents.length > 0 && (
+          <div className="mt-5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+            <div className="flex items-start gap-2.5 font-bold">
+              <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+              <span>{t.onboarding.installFailedTitle}</span>
+            </div>
+            <ul className="mt-2 list-disc space-y-1 ps-6 text-xs sm:text-sm" dir="ltr">
+              {failedComponents.map((f) => (
+                <li key={f.id}>
+                  <strong>{f.id}</strong>: {f.message}
+                </li>
+              ))}
+            </ul>
+            {errorReportStatus === 'sent' && (
+              <p className="mt-2.5 text-xs font-semibold text-emerald-800 sm:text-sm">
+                {t.onboarding.installErrorAutoSent}
+              </p>
+            )}
+            {errorReportStatus === 'failed' && (
+              <p className="mt-2.5 text-xs font-semibold text-rose-800 sm:text-sm">
+                {t.onboarding.installErrorSendFailed}
+              </p>
+            )}
+          </div>
+        )}
+
+        {installSummaryState === 'success' && (
+          <div className="mt-5 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-bold text-emerald-900">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+            <span>{t.onboarding.installAllSuccess}</span>
           </div>
         )}
 
