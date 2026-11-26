@@ -162,3 +162,14 @@ pub struct TelemetryResponse {
     pub log_url: Option<String>,
     pub error: Option<String>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct HubUpdateInfo {
+    pub current_version: String,
+    pub latest_version: String,
+    pub update_available: bool,
+    pub download_url: Option<String>,
+    pub asset_name: Option<String>,
+    pub release_url: String,
+    pub published_at: Option<String>,
+}

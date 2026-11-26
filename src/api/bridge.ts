@@ -7,6 +7,7 @@ import type {
   ComponentId,
   ComponentScanStatus,
   DiagnosticReport,
+  HubUpdateInfo,
   InstallActionResult,
   InstallProgressEvent,
   Manifest,
@@ -15,7 +16,7 @@ import type {
   TelemetryResponse,
 } from '../types';
 
-export const HUB_VERSION = '0.1.5';
+export const HUB_VERSION = '0.1.6';
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -300,4 +301,26 @@ export async function findArduinoPorts(): Promise<SerialDeviceInfo[]> {
     ];
   }
   return invoke<SerialDeviceInfo[]>('find_arduino_ports');
+}
+
+export async function checkHubUpdate(): Promise<HubUpdateInfo> {
+  if (!isTauriRuntime()) {
+    return {
+      current_version: HUB_VERSION,
+      latest_version: HUB_VERSION,
+      update_available: false,
+      release_url: 'https://github.com/urikorisky/BCI_Workshop_2026_Hub/releases/latest',
+    };
+  }
+  return invoke<HubUpdateInfo>('check_hub_update');
+}
+
+export async function downloadAndOpenHubUpdate(
+  downloadUrl: string,
+  assetName: string
+): Promise<string> {
+  if (!isTauriRuntime()) {
+    return `Downloads/${assetName} (preview)`;
+  }
+  return invoke<string>('download_and_open_hub_update', { downloadUrl, assetName });
 }

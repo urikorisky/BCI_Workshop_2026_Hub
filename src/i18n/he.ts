@@ -319,6 +319,20 @@ export const he = {
     sentSuccess: 'הדוח התקבל אצל המרצה! תוכלו לציין את שמכם בכיתה.',
     cancelBtn: 'ביטול',
   },
+  update: {
+    pillLabel: 'עדכון זמין:',
+    title: 'קיימת גרסה חדשה ל-BCI Workshop Hub',
+    versionLabel: 'גרסה נוכחית ← חדשה:',
+    body: 'שוחררה גרסה עדכנית הכוללת תיקונים ושיפורים להכנת המחשב לסדנה. לחצו להורדה והתקנה של הגרסה החדשה.',
+    installBtn: 'הורד והתקן גרסה חדשה',
+    downloadingBtn: 'מוריד ופותח את המתקין...',
+    openedNote:
+      'קובץ ההתקנה הורד ונפתח. ב-Windows: סגרו חלון זה אם המתקין מבקש והשלימו Next → Install. ב-Mac: גררו אל Applications ואשרו החלפה (Replace).',
+    openBrowserBtn: 'פתח הורדה בדפדפן',
+    laterBtn: 'הזכר לי מאוחר יותר',
+    closeBtn: 'סגור',
+    errorPrefix: 'לא הצלחנו להוריד אוטומטית:',
+  },
 };
 
 export type Translations = typeof he;

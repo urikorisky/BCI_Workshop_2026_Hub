@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { LanguageProvider } from './i18n';
 import { ThemeProvider } from './theme';
-import { fetchManifest } from './api/bridge';
+import { checkHubUpdate, fetchManifest } from './api/bridge';
 import { Header } from './components/Header';
+import { UpdatePromptModal } from './components/UpdatePromptModal';
 import { SignInView } from './views/SignInView';
 import { OnboardingView } from './views/OnboardingView';
 import { DiagnosticsView } from './views/DiagnosticsView';
 import { DashboardView } from './views/DashboardView';
-import type { AppScreen, AuthUser, ComponentId, ComponentScanStatus, Manifest } from './types';
+import type {
+  AppScreen,
+  AuthUser,
+  ComponentId,
+  ComponentScanStatus,
+  HubUpdateInfo,
+  Manifest,
+} from './types';
 
 const AppShell: React.FC = () => {
   const [manifest, setManifest] = useState<Manifest | null>(null);
@@ -15,9 +23,21 @@ const AppShell: React.FC = () => {
   const [screen, setScreen] = useState<AppScreen>('sign_in');
   const [scans, setScans] = useState<ComponentScanStatus[]>([]);
   const [selectedApps, setSelectedApps] = useState<ComponentId[]>([]);
+  const [updateInfo, setUpdateInfo] = useState<HubUpdateInfo | null>(null);
+  const [updateModalOpen, setUpdateModalOpen] = useState(false);
 
   useEffect(() => {
     void fetchManifest().then(setManifest);
+    void checkHubUpdate()
+      .then((info) => {
+        setUpdateInfo(info);
+        if (info.update_available) {
+          setUpdateModalOpen(true);
+        }
+      })
+      .catch(() => {
+        // Silent failure if offline on launch
+      });
   }, []);
 
   const handleSignedIn = (authedUser: AuthUser) => {
@@ -36,8 +56,10 @@ const AppShell: React.FC = () => {
         user={user}
         screen={screen}
         manifest={manifest}
+        updateInfo={updateInfo}
         onNavigate={setScreen}
         onSignOut={handleSignOut}
+        onOpenUpdateModal={() => setUpdateModalOpen(true)}
       />
 
       <main className="pb-12">
@@ -70,6 +92,12 @@ const AppShell: React.FC = () => {
           />
         )}
       </main>
+
+      <UpdatePromptModal
+        open={updateModalOpen}
+        info={updateInfo}
+        onClose={() => setUpdateModalOpen(false)}
+      />
     </div>
   );
 };

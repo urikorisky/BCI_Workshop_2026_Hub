@@ -156,3 +156,13 @@ export interface PreActionModalPayload {
   actionType: NonNullable<InstallActionResult['manual_action_type']>;
   manualUrl?: string;
 }
+
+export interface HubUpdateInfo {
+  current_version: string;
+  latest_version: string;
+  update_available: boolean;
+  download_url?: string;
+  asset_name?: string;
+  release_url: string;
+  published_at?: string;
+}

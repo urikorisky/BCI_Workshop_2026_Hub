@@ -3,22 +3,26 @@ import { BrainCircuit, Globe, LogOut, Megaphone, AlertTriangle, Palette } from '
 import { useI18n } from '../i18n';
 import { ENABLE_THEME_SWATCH_DEBUG, THEME_OPTIONS, useTheme } from '../theme';
 import { HUB_VERSION, isTauriRuntime } from '../api/bridge';
-import type { AppScreen, AuthUser, Manifest } from '../types';
+import type { AppScreen, AuthUser, HubUpdateInfo, Manifest } from '../types';
 
 interface HeaderProps {
   user: AuthUser | null;
   screen: AppScreen;
   manifest: Manifest | null;
+  updateInfo?: HubUpdateInfo | null;
   onNavigate: (next: AppScreen) => void;
   onSignOut: () => void;
+  onOpenUpdateModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   user,
   screen,
   manifest,
+  updateInfo,
   onNavigate,
   onSignOut,
+  onOpenUpdateModal,
 }) => {
   const { lang, setLang, t } = useI18n();
   const {
@@ -56,6 +60,15 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 v{HUB_VERSION}
               </span>
+              {updateInfo?.update_available && onOpenUpdateModal && (
+                <button
+                  type="button"
+                  onClick={onOpenUpdateModal}
+                  className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-0.5 text-xs font-bold text-amber-900 transition hover:bg-amber-200"
+                >
+                  {t.update.pillLabel} <span dir="ltr">v{updateInfo.latest_version}</span>
+                </button>
+              )}
               {!isTauriRuntime() && (
                 <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                   {t.previewBadge}

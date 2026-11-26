@@ -1,5 +1,5 @@
 use crate::models::{
-    InstallActionResult, InstallProgressEvent, Manifest, PlatformArtifact,
+    HubUpdateInfo, InstallActionResult, InstallProgressEvent, Manifest, PlatformArtifact,
 };
 use crate::scanner::{
     detect_antigravity_path, detect_arduino_ide_path, detect_github_desktop_path,
@@ -20,6 +20,10 @@ use tauri::Emitter;
 const BUNDLED_MANIFEST: &str = include_str!("../../manifest.json");
 const REMOTE_MANIFEST_URL: &str =
     "https://raw.githubusercontent.com/urikorisky/BCI_Workshop_2026_Hub/main/manifest.json";
+const HUB_RELEASES_API_URL: &str =
+    "https://api.github.com/repos/urikorisky/BCI_Workshop_2026_Hub/releases/latest";
+const HUB_RELEASES_WEB_URL: &str =
+    "https://github.com/urikorisky/BCI_Workshop_2026_Hub/releases/latest";
 
 fn emit_progress(app: &tauri::AppHandle, component_id: &str, stage: &str, percent: u8, msg: &str) {
     let _ = app.emit(
@@ -681,4 +685,189 @@ pub async fn launch_app(app: tauri::AppHandle, id: String) -> Result<String, Str
         .open_path(&target, None::<&str>)
         .map_err(|e| format!("Failed launching {id}: {e}"))?;
     Ok(format!("Launched {id}."))
+}
+
+fn parse_semver_tuple(v: &str) -> Option<(u64, u64, u64)> {
+    let trimmed = v.trim().trim_start_matches(|c| c == 'v' || c == 'V');
+    let core = trimmed.split('-').next().unwrap_or(trimmed);
+    let mut parts = core.split('.');
+    let major = parts.next()?.parse::<u64>().ok()?;
+    let minor = parts.next().unwrap_or("0").parse::<u64>().ok()?;
+    let patch = parts.next().unwrap_or("0").parse::<u64>().ok()?;
+    Some((major, minor, patch))
+}
+
+fn is_newer_version(latest: &str, current: &str) -> bool {
+    match (parse_semver_tuple(latest), parse_semver_tuple(current)) {
+        (Some(l), Some(c)) => l > c,
+        _ => false,
+    }
+}
+
+fn select_hub_release_asset(assets: &[serde_json::Value]) -> Option<(String, String)> {
+    #[cfg(target_os = "windows")]
+    {
+        let mut fallback_exe: Option<(String, String)> = None;
+        for asset in assets {
+            let name = asset["name"].as_str().unwrap_or("");
+            let url = asset["browser_download_url"].as_str().unwrap_or("");
+            if name.is_empty() || url.is_empty() {
+                continue;
+            }
+            let lower = name.to_lowercase();
+            if lower.ends_with(".msi") {
+                return Some((name.to_string(), url.to_string()));
+            }
+            if lower.ends_with(".exe") && fallback_exe.is_none() {
+                fallback_exe = Some((name.to_string(), url.to_string()));
+            }
+        }
+        fallback_exe
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let mut fallback_dmg: Option<(String, String)> = None;
+        for asset in assets {
+            let name = asset["name"].as_str().unwrap_or("");
+            let url = asset["browser_download_url"].as_str().unwrap_or("");
+            if name.is_empty() || url.is_empty() {
+                continue;
+            }
+            let lower = name.to_lowercase();
+            if lower.ends_with(".dmg") {
+                if lower.contains("universal") {
+                    return Some((name.to_string(), url.to_string()));
+                }
+                if fallback_dmg.is_none() {
+                    fallback_dmg = Some((name.to_string(), url.to_string()));
+                }
+            }
+        }
+        fallback_dmg
+    }
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    {
+        let _ = assets;
+        None
+    }
+}
+
+#[tauri::command]
+pub async fn check_hub_update() -> Result<HubUpdateInfo, String> {
+    let current = env!("CARGO_PKG_VERSION").to_string();
+    let mut fallback = HubUpdateInfo {
+        current_version: current.clone(),
+        latest_version: current.clone(),
+        update_available: false,
+        download_url: None,
+        asset_name: None,
+        release_url: HUB_RELEASES_WEB_URL.to_string(),
+        published_at: None,
+    };
+
+    let Ok(client) = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(8))
+        .user_agent(format!("BCI-Workshop-Hub/{current}"))
+        .build()
+    else {
+        return Ok(fallback);
+    };
+
+    // Tier 1: Live GitHub Releases API (exact asset URLs & release metadata).
+    if let Ok(resp) = client
+        .get(HUB_RELEASES_API_URL)
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await
+    {
+        if resp.status().is_success() {
+            if let Ok(json) = resp.json::<serde_json::Value>().await {
+                let tag = json["tag_name"].as_str().unwrap_or("").trim();
+                if !tag.is_empty() {
+                    let latest = tag.trim_start_matches(|c| c == 'v' || c == 'V').to_string();
+                    let release_url = json["html_url"]
+                        .as_str()
+                        .unwrap_or(HUB_RELEASES_WEB_URL)
+                        .to_string();
+                    let published_at = json["published_at"].as_str().map(|s| s.to_string());
+                    let matched = json["assets"]
+                        .as_array()
+                        .and_then(|arr| select_hub_release_asset(arr));
+                    let (asset_name, download_url) = match matched {
+                        Some((n, u)) => (Some(n), Some(u)),
+                        None => (None, None),
+                    };
+                    let update_available =
+                        is_newer_version(&latest, &current) && download_url.is_some();
+                    return Ok(HubUpdateInfo {
+                        current_version: current,
+                        latest_version: latest,
+                        update_available,
+                        download_url,
+                        asset_name,
+                        release_url,
+                        published_at,
+                    });
+                }
+            }
+        }
+    }
+
+    // Tier 2: Redirect fallback via web releases URL (bypasses GitHub API IP rate limits).
+    if let Ok(resp) = client.get(HUB_RELEASES_WEB_URL).send().await {
+        let final_url = resp.url().as_str().to_string();
+        if let Some(tag) = final_url.split("/releases/tag/").nth(1) {
+            let clean_tag = tag.split(&['?', '#'][..]).next().unwrap_or(tag).trim();
+            let latest = clean_tag
+                .trim_start_matches(|c| c == 'v' || c == 'V')
+                .to_string();
+            if !latest.is_empty() {
+                fallback.latest_version = latest.clone();
+                fallback.release_url = final_url.clone();
+                if is_newer_version(&latest, &current) {
+                    let candidate_name = if cfg!(target_os = "windows") {
+                        Some(format!("BCI.Workshop.Hub_{latest}_x64_en-US.msi"))
+                    } else if cfg!(target_os = "macos") {
+                        Some(format!("BCI.Workshop.Hub_{latest}_universal.dmg"))
+                    } else {
+                        None
+                    };
+                    if let Some(name) = candidate_name {
+                        let candidate_url = format!(
+                            "https://github.com/urikorisky/BCI_Workshop_2026_Hub/releases/download/v{latest}/{name}"
+                        );
+                        if let Ok(head_resp) = client.head(&candidate_url).send().await {
+                            if head_resp.status().is_success() {
+                                fallback.update_available = true;
+                                fallback.asset_name = Some(name);
+                                fallback.download_url = Some(candidate_url);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(fallback)
+}
+
+#[tauri::command]
+pub async fn download_and_open_hub_update(
+    app: tauri::AppHandle,
+    download_url: String,
+    asset_name: String,
+) -> Result<String, String> {
+    if !download_url.starts_with("https://github.com/urikorisky/BCI_Workshop_2026_Hub/") {
+        return Err("Refused update URL outside official repository.".to_string());
+    }
+    let safe_name = Path::new(&asset_name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .filter(|s| !s.is_empty())
+        .unwrap_or("BCI_Workshop_Hub_Update");
+    let dest = workshop_downloads_dir().join(safe_name);
+    download_file_verified(&app, "hub_update", &download_url, "", &dest).await?;
+    open_local_installer(&app, &dest)?;
+    Ok(dest.to_string_lossy().to_string())
 }

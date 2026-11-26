@@ -21,6 +21,8 @@ pub fn run() {
             installer::create_gitbook_shortcut,
             installer::sync_course_materials,
             installer::launch_app,
+            installer::check_hub_update,
+            installer::download_and_open_hub_update,
             diagnostics::find_arduino_ports,
         ])
         .run(tauri::generate_context!())

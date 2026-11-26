@@ -312,4 +312,18 @@ export const en: Translations = {
     sentSuccess: 'Report received! Feel free to raise your hand or share your email in class.',
     cancelBtn: 'Cancel',
   },
+  update: {
+    pillLabel: 'Update:',
+    title: 'A Newer Version of BCI Workshop Hub Is Available',
+    versionLabel: 'Installed → Latest:',
+    body: 'A newer release with setup fixes and improvements has been published. Click below to download and launch the new installer.',
+    installBtn: 'Download & Install Update',
+    downloadingBtn: 'Downloading and opening installer...',
+    openedNote:
+      'Installer downloaded and opened. On Windows: close this window if prompted and finish Next → Install. On Mac: drag to Applications and choose Replace.',
+    openBrowserBtn: 'Download in Browser',
+    laterBtn: 'Remind Me Later',
+    closeBtn: 'Close',
+    errorPrefix: 'Automatic download failed:',
+  },
 };
