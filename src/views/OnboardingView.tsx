@@ -10,6 +10,7 @@ import {
   Download,
   ArrowRight,
   Terminal,
+  Info,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import {
@@ -35,15 +36,21 @@ interface OnboardingViewProps {
   onContinueToDiagnostics: () => void;
 }
 
-const RECOMMENDED_IDS: ComponentId[] = ['python_env', 'jupyterlab', 'arduino_ide', 'drivers'];
-
-const COMPONENT_ORDER: ComponentId[] = [
+const REQUIRED_IDS: ComponentId[] = [
   'python_env',
-  'jupyterlab',
   'arduino_ide',
   'drivers',
   'openbci_gui',
   'lab_recorder',
+];
+
+const COMPONENT_ORDER: ComponentId[] = [
+  'python_env',
+  'arduino_ide',
+  'drivers',
+  'openbci_gui',
+  'lab_recorder',
+  'jupyterlab',
   'thonny',
   'antigravity',
   'github_desktop',
@@ -76,7 +83,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       setGuardrails(g);
       setScans(s);
       onScanUpdated(s);
-      const autoDefaults = RECOMMENDED_IDS.filter(
+      const autoDefaults = REQUIRED_IDS.filter(
         (id) => !s.find((item) => item.id === id)?.installed
       );
       if (selectedApps.length === 0 && autoDefaults.length > 0) {
@@ -108,8 +115,8 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     }
   };
 
-  const selectRecommendedMissing = () => {
-    const missing = RECOMMENDED_IDS.filter(
+  const selectRequiredMissing = () => {
+    const missing = REQUIRED_IDS.filter(
       (id) => !scans.find((s) => s.id === id)?.installed
     );
     onSelectedAppsChange(missing);
@@ -152,17 +159,35 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
   const scanMap = new Map(scans.map((s) => [s.id, s]));
 
+  const getPythonPreScanBanner = (status?: ComponentScanStatus): string | null => {
+    if (!status) return null;
+    const ver = status.detected_version ?? '';
+    if (status.notes === 'venv_ready') {
+      return t.onboarding.pythonVenvReady.replace('{ver}', ver);
+    }
+    if (status.notes === 'compatible_system_python') {
+      return t.onboarding.pythonReuseCompatible.replace('{ver}', ver);
+    }
+    if (status.notes === 'incompatible_system_python') {
+      return t.onboarding.pythonIncompatibleFound.replace('{ver}', ver);
+    }
+    if (status.notes === 'not_found') {
+      return t.onboarding.pythonNotFound;
+    }
+    return null;
+  };
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6">
       {/* Pre-Flight System Guardrails */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-bold text-slate-900">{t.guardrails.title}</h2>
+          <h2 className="text-base font-bold text-slate-900">{t.guardrails.title}</h2>
           <button
             type="button"
             onClick={runScan}
             disabled={scanning || installing}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${scanning ? 'animate-spin' : ''}`} />
             <span>{t.onboarding.rescanBtn}</span>
@@ -172,22 +197,22 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         {guardrails && (
           <div className="mt-3 space-y-3">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3 text-xs">
-                <Cpu className="h-4 w-4 shrink-0 text-indigo-600" />
+              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3.5 text-sm">
+                <Cpu className="h-5 w-5 shrink-0 text-brand-600" />
                 <div>
-                  <div className="text-slate-500">{t.guardrails.osLabel}</div>
+                  <div className="text-xs text-slate-500">{t.guardrails.osLabel}</div>
                   <div className="font-bold text-slate-800" dir="ltr">
                     {guardrails.os_name} {guardrails.os_version} ({guardrails.arch})
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3 text-xs">
+              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3.5 text-sm">
                 <HardDrive
-                  className={`h-4 w-4 shrink-0 ${guardrails.disk_ok ? 'text-emerald-600' : 'text-amber-600'}`}
+                  className={`h-5 w-5 shrink-0 ${guardrails.disk_ok ? 'text-emerald-600' : 'text-amber-600'}`}
                 />
                 <div>
-                  <div className="text-slate-500">{t.guardrails.diskLabel}</div>
+                  <div className="text-xs text-slate-500">{t.guardrails.diskLabel}</div>
                   <div className="font-bold text-slate-800">
                     {guardrails.free_disk_gb.toFixed(1)} GB —{' '}
                     {guardrails.disk_ok ? t.guardrails.diskOk : t.guardrails.diskLow}
@@ -195,22 +220,22 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3 text-xs">
-                <FolderCheck className="h-4 w-4 shrink-0 text-emerald-600" />
+              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3.5 text-sm">
+                <FolderCheck className="h-5 w-5 shrink-0 text-emerald-600" />
                 <div className="min-w-0">
-                  <div className="text-slate-500">{t.guardrails.pathLabel}</div>
+                  <div className="text-xs text-slate-500">{t.guardrails.pathLabel}</div>
                   <div className="truncate font-mono font-bold text-slate-800" dir="ltr">
                     {guardrails.workshop_root}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 rounded-xl bg-slate-50 p-3 text-xs">
+              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3.5 text-sm">
                 <Wifi
-                  className={`h-4 w-4 shrink-0 ${guardrails.internet_ok ? 'text-emerald-600' : 'text-rose-600'}`}
+                  className={`h-5 w-5 shrink-0 ${guardrails.internet_ok ? 'text-emerald-600' : 'text-rose-600'}`}
                 />
                 <div>
-                  <div className="text-slate-500">{t.guardrails.internetLabel}</div>
+                  <div className="text-xs text-slate-500">{t.guardrails.internetLabel}</div>
                   <div className="font-bold text-slate-800">
                     {guardrails.internet_ok ? t.guardrails.internetOk : t.guardrails.internetFail}
                   </div>
@@ -219,7 +244,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             </div>
 
             {!guardrails.home_is_ascii && (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3.5 text-sm text-amber-900">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
                 <span>
                   {t.guardrails.asciiWarning}{' '}
@@ -233,27 +258,27 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         )}
       </section>
 
-      {/* Optional Component Selection Cards */}
+      {/* Component Selection Cards */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{t.onboarding.heading}</h2>
-            <p className="mt-1 max-w-3xl text-xs leading-relaxed text-slate-600 sm:text-sm">
+            <h2 className="text-xl font-bold text-slate-900">{t.onboarding.heading}</h2>
+            <p className="mt-1 max-w-3xl text-sm leading-relaxed text-slate-600">
               {t.onboarding.subheading}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={selectRecommendedMissing}
-              className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100"
+              onClick={selectRequiredMissing}
+              className="rounded-lg border border-brand-200 bg-brand-50 px-3.5 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-100"
             >
-              {t.onboarding.selectAllMissing}
+              {t.onboarding.selectAllRequired}
             </button>
             <button
               type="button"
               onClick={() => onSelectedAppsChange([])}
-              className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              className="rounded-lg border border-slate-200 px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
             >
               {t.onboarding.clearSelection}
             </button>
@@ -261,7 +286,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
         </div>
 
         {scanning ? (
-          <div className="py-10 text-center text-sm text-slate-500">{t.onboarding.scanning}</div>
+          <div className="py-12 text-center text-base text-slate-500">{t.onboarding.scanning}</div>
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {COMPONENT_ORDER.map((id) => {
@@ -269,58 +294,79 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               const status = scanMap.get(id);
               const isSelected = selectedApps.includes(id);
               const isInstalled = Boolean(status?.installed);
+              const isRequired = REQUIRED_IDS.includes(id);
+              const pythonBanner = id === 'python_env' ? getPythonPreScanBanner(status) : null;
 
               return (
                 <div
                   key={id}
                   onClick={() => !installing && toggleSelect(id)}
-                  className={`cursor-pointer rounded-2xl border p-4 transition ${
+                  className={`cursor-pointer rounded-2xl border p-4.5 transition ${
                     isSelected
-                      ? 'border-indigo-500 bg-indigo-50/40 ring-2 ring-indigo-200'
+                      ? 'border-brand-500 bg-brand-50/40 ring-2 ring-brand-200'
                       : isInstalled
                         ? 'border-emerald-200 bg-emerald-50/20 hover:border-emerald-300'
                         : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-2.5">
+                    <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
                         checked={isSelected}
                         disabled={installing}
                         onChange={() => {}}
-                        className="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-600"
+                        className="mt-1 h-4 w-4 rounded border-slate-300 text-brand-600"
                       />
                       <div>
-                        <h3 className="text-sm font-bold text-slate-900">{copy.title}</h3>
-                        <p className="text-xs text-slate-500">{copy.subtitle}</p>
+                        <h3 className="text-base font-bold text-slate-900">{copy.title}</h3>
+                        <p className="mt-0.5 text-xs text-slate-500 sm:text-sm">{copy.subtitle}</p>
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600" dir="ltr">
+                    <span
+                      className="shrink-0 rounded-md bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600"
+                      dir="ltr"
+                    >
                       {copy.approxSize}
                     </span>
                   </div>
 
-                  <p className="mt-2.5 text-xs leading-relaxed text-slate-700">{copy.whyNeeded}</p>
+                  <p className="mt-2.5 text-xs leading-relaxed text-slate-700 sm:text-sm">
+                    {copy.whyNeeded}
+                  </p>
+
+                  {pythonBanner && (
+                    <div className="mt-3 flex items-start gap-2 rounded-xl border border-brand-200 bg-brand-50/70 p-2.5 text-xs font-medium text-brand-900">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                      <span>{pythonBanner}</span>
+                    </div>
+                  )}
 
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     {isInstalled ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
-                        <CheckCircle2 className="h-3 w-3" />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
                         <span>{t.onboarding.alreadyInstalled}</span>
                       </span>
                     ) : (
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold text-slate-600">
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-600">
                         {t.onboarding.notFound}
                       </span>
                     )}
 
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700">
-                      {copy.recommendedTag ?? t.onboarding.optionalBadge}
+                    <span
+                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                        isRequired
+                          ? 'bg-rose-50 text-rose-800 border border-rose-200'
+                          : 'bg-brand-50 text-brand-700'
+                      }`}
+                    >
+                      {copy.recommendedTag ??
+                        (isRequired ? t.onboarding.requiredBadge : t.onboarding.optionalBadge)}
                     </span>
 
                     {status?.detected_path && (
-                      <span className="truncate text-[11px] text-slate-400" dir="ltr">
+                      <span className="truncate text-xs text-slate-400" dir="ltr">
                         {status.detected_path}
                       </span>
                     )}
@@ -333,11 +379,14 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
 
         {logs.length > 0 && (
           <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs text-slate-100">
-            <div className="mb-2 flex items-center gap-1.5 font-semibold text-indigo-300">
-              <Terminal className="h-3.5 w-3.5" />
+            <div className="mb-2 flex items-center gap-1.5 font-semibold text-brand-300">
+              <Terminal className="h-4 w-4" />
               <span>{t.onboarding.liveLogTitle}</span>
             </div>
-            <pre className="max-h-44 overflow-y-auto whitespace-pre-wrap font-mono text-[11px] leading-relaxed" dir="ltr">
+            <pre
+              className="max-h-44 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed"
+              dir="ltr"
+            >
               {logs.join('\n')}
             </pre>
           </div>
@@ -348,7 +397,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             type="button"
             disabled={installing || selectedApps.length === 0}
             onClick={handleInstallAll}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Download className="h-4 w-4" />
             <span>
@@ -362,7 +411,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             type="button"
             disabled={installing}
             onClick={onContinueToDiagnostics}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-800 transition hover:bg-slate-50"
           >
             <span>
               {logs.length > 0

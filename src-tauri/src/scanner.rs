@@ -75,6 +75,38 @@ pub fn find_compatible_system_python() -> Option<(String, Vec<String>, String)> 
     None
 }
 
+/// Finds any installed system Python (even outside 3.10-3.12 or missing tkinter) for clear pre-scan reporting.
+pub fn find_any_system_python() -> Option<(String, String)> {
+    #[cfg(target_os = "windows")]
+    let candidates: Vec<(&str, Vec<&str>)> = vec![
+        ("py", vec!["-3"]),
+        ("python", vec![]),
+        ("python3", vec![]),
+    ];
+
+    #[cfg(not(target_os = "windows"))]
+    let candidates: Vec<(&str, Vec<&str>)> = vec![
+        ("python3", vec![]),
+        ("/opt/homebrew/bin/python3", vec![]),
+        ("/usr/local/bin/python3", vec![]),
+        ("python", vec![]),
+    ];
+
+    let probe = "import sys; v=sys.version_info; print(f'{v.major}.{v.minor}.{v.micro}')";
+
+    for (prog, prefix_args) in candidates {
+        let mut args: Vec<&str> = prefix_args.clone();
+        args.push("-c");
+        args.push(probe);
+        if let Some((ok, stdout, _)) = run_silent_command(prog, &args) {
+            if ok && !stdout.is_empty() {
+                return Some((prog.to_string(), stdout));
+            }
+        }
+    }
+    None
+}
+
 fn first_existing_path(paths: Vec<PathBuf>) -> Option<String> {
     for p in paths {
         if p.exists() {
@@ -265,15 +297,23 @@ pub async fn scan_installed_components() -> Result<Vec<ComponentScanStatus>, Str
             installed: true,
             detected_version: Some(ver),
             detected_path: Some(venv_py.to_string_lossy().to_string()),
-            notes: None,
+            notes: Some("venv_ready".to_string()),
         }
     } else if let Some((prog, _, ver)) = find_compatible_system_python() {
         ComponentScanStatus {
             id: "python_env".to_string(),
             installed: false,
-            detected_version: Some(format!("System Python {ver} ready for .venv")),
+            detected_version: Some(ver),
             detected_path: Some(prog),
-            notes: Some("Compatible system Python found; workshop .venv not yet created".to_string()),
+            notes: Some("compatible_system_python".to_string()),
+        }
+    } else if let Some((prog, ver)) = find_any_system_python() {
+        ComponentScanStatus {
+            id: "python_env".to_string(),
+            installed: false,
+            detected_version: Some(ver),
+            detected_path: Some(prog),
+            notes: Some("incompatible_system_python".to_string()),
         }
     } else {
         ComponentScanStatus {
@@ -281,7 +321,7 @@ pub async fn scan_installed_components() -> Result<Vec<ComponentScanStatus>, Str
             installed: false,
             detected_version: None,
             detected_path: None,
-            notes: None,
+            notes: Some("not_found".to_string()),
         }
     };
     results.push(py_status);

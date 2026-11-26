@@ -37,12 +37,12 @@ export const FindArduinoModal: React.FC<FindArduinoModalProps> = ({ open, onClos
       <div className="w-full max-w-lg rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="rounded-xl bg-indigo-100 p-2.5 text-indigo-700">
+            <div className="rounded-xl bg-brand-100 p-2.5 text-brand-700">
               <Usb className="h-5 w-5" />
             </div>
             <div>
               <h3 className="text-base font-bold text-slate-900">{t.findArduino.title}</h3>
-              <p className="mt-0.5 text-xs text-slate-600">{t.findArduino.subtitle}</p>
+              <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">{t.findArduino.subtitle}</p>
             </div>
           </div>
           <button
@@ -59,7 +59,7 @@ export const FindArduinoModal: React.FC<FindArduinoModalProps> = ({ open, onClos
             type="button"
             onClick={scan}
             disabled={scanning}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:opacity-50"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${scanning ? 'animate-spin' : ''}`} />
             <span>{scanning ? t.findArduino.scanning : t.findArduino.scanBtn}</span>
@@ -68,7 +68,7 @@ export const FindArduinoModal: React.FC<FindArduinoModalProps> = ({ open, onClos
 
         <div className="mt-4 max-h-72 space-y-2.5 overflow-y-auto">
           {!scanning && ports.length === 0 && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-xs text-slate-600">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-center text-sm text-slate-600">
               {t.findArduino.empty}
             </div>
           )}
@@ -78,7 +78,7 @@ export const FindArduinoModal: React.FC<FindArduinoModalProps> = ({ open, onClos
               key={p.port}
               className={`rounded-xl border p-3.5 ${
                 p.is_ch340
-                  ? 'border-indigo-300 bg-indigo-50/60'
+                  ? 'border-brand-300 bg-brand-50/60'
                   : 'border-slate-200 bg-white'
               }`}
             >
@@ -88,7 +88,7 @@ export const FindArduinoModal: React.FC<FindArduinoModalProps> = ({ open, onClos
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {p.is_ch340 && (
-                    <span className="rounded-full bg-indigo-600 px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                    <span className="rounded-full bg-brand-600 px-2.5 py-0.5 text-xs font-semibold text-white">
                       {t.findArduino.ch340Badge}
                     </span>
                   )}

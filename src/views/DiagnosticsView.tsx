@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -30,29 +30,19 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
   const [running, setRunning] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadNotice, setUploadNotice] = useState<{ ok: boolean; msg: string } | null>(null);
+  const hasAutoStarted = useRef(false);
 
-  const handleRun = async () => {
-    setRunning(true);
-    setUploadNotice(null);
-    try {
-      const res = await runDiagnostics(selectedApps);
-      setReport(res);
-    } finally {
-      setRunning(false);
-    }
-  };
-
-  const handleUpload = async () => {
-    if (!report) return;
+  const uploadReport = async (diagReport: DiagnosticReport) => {
+    const endpoint = manifest?.urls.telemetry_endpoint ?? '';
+    if (!endpoint || endpoint.includes('REPLACE_WITH')) return;
     setUploading(true);
     setUploadNotice(null);
     try {
-      const endpoint = manifest?.urls.telemetry_endpoint ?? '';
       const resp = await uploadTelemetry({
         endpoint,
         user,
         eventType: 'diagnostics',
-        report,
+        report: diagReport,
         optionalAppsSelected: selectedApps,
       });
       if (resp.ok) {
@@ -67,6 +57,26 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
     }
   };
 
+  const handleRun = async () => {
+    setRunning(true);
+    setUploadNotice(null);
+    try {
+      const res = await runDiagnostics(selectedApps);
+      setReport(res);
+      await uploadReport(res);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  // Auto-run hardware-free verification and auto-upload on entering this screen.
+  useEffect(() => {
+    if (!hasAutoStarted.current) {
+      hasAutoStarted.current = true;
+      void handleRun();
+    }
+  }, []);
+
   const renderStatusIcon = (status: string) => {
     if (status === 'pass') return <CheckCircle2 className="h-5 w-5 text-emerald-600" />;
     if (status === 'warn') return <AlertTriangle className="h-5 w-5 text-amber-500" />;
@@ -78,8 +88,8 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">{t.diagnostics.heading}</h2>
-            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-slate-600 sm:text-sm">
+            <h2 className="text-xl font-bold text-slate-900">{t.diagnostics.heading}</h2>
+            <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600">
               {t.diagnostics.subheading}
             </p>
           </div>
@@ -87,17 +97,23 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
             type="button"
             disabled={running}
             onClick={handleRun}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700 disabled:opacity-50"
           >
             <Activity className={`h-4 w-4 ${running ? 'animate-pulse' : ''}`} />
             <span>{running ? t.diagnostics.running : t.diagnostics.runBtn}</span>
           </button>
         </div>
 
+        {running && !report && (
+          <div className="py-12 text-center text-base font-medium text-slate-500">
+            {t.diagnostics.running}
+          </div>
+        )}
+
         {report && (
           <div className="mt-6 space-y-4">
             <div
-              className={`rounded-xl border p-4 text-sm font-bold ${
+              className={`rounded-xl border p-4 text-base font-bold ${
                 report.overall_status === 'pass'
                   ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
                   : report.overall_status === 'warn'
@@ -108,7 +124,7 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
               {t.diagnostics.overallLabels[report.overall_status]}
             </div>
 
-            <div className="space-y-2.5">
+            <div className="space-y-3">
               {report.checks.map((chk) => {
                 const remediationText = chk.remediation_key
                   ? t.diagnostics.remediations[
@@ -124,12 +140,12 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         {renderStatusIcon(chk.status)}
-                        <span className="text-sm font-bold text-slate-900">
+                        <span className="text-sm font-bold text-slate-900 sm:text-base">
                           {t.diagnostics.checkNames[chk.id]}
                         </span>
                       </div>
                       <span
-                        className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+                        className={`rounded-full px-3 py-0.5 text-xs font-bold ${
                           chk.status === 'pass'
                             ? 'bg-emerald-100 text-emerald-800'
                             : chk.status === 'warn'
@@ -141,18 +157,18 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
                       </span>
                     </div>
 
-                    <p className="mt-1.5 text-xs font-medium text-slate-700" dir="ltr">
+                    <p className="mt-2 text-xs font-medium text-slate-700 sm:text-sm" dir="ltr">
                       {chk.summary}
                     </p>
                     {chk.details && (
-                      <p className="mt-1 text-[11px] text-slate-500" dir="ltr">
+                      <p className="mt-1 text-xs text-slate-500" dir="ltr">
                         {chk.details}
                       </p>
                     )}
 
                     {remediationText && chk.status !== 'pass' && (
-                      <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-xs text-amber-900">
-                        <Wrench className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                      <div className="mt-2.5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 sm:text-sm">
+                        <Wrench className="mt-0.5 h-4 w-4 shrink-0" />
                         <span>{remediationText}</span>
                       </div>
                     )}
@@ -161,9 +177,15 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
               })}
             </div>
 
+            {uploading && (
+              <div className="rounded-xl border border-brand-200 bg-brand-50 p-3.5 text-sm font-semibold text-brand-800">
+                {t.diagnostics.uploading}
+              </div>
+            )}
+
             {uploadNotice && (
               <div
-                className={`rounded-xl border p-3 text-xs font-semibold ${
+                className={`rounded-xl border p-3.5 text-sm font-semibold ${
                   uploadNotice.ok
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
                     : 'border-rose-200 bg-rose-50 text-rose-800'
@@ -177,8 +199,8 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
               <button
                 type="button"
                 disabled={uploading}
-                onClick={handleUpload}
-                className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-50"
+                onClick={() => void uploadReport(report)}
+                className="inline-flex items-center gap-2 rounded-xl border border-emerald-600 bg-white px-5 py-2.5 text-sm font-bold text-emerald-700 shadow-xs transition hover:bg-emerald-50 disabled:opacity-50"
               >
                 <UploadCloud className="h-4 w-4" />
                 <span>{uploading ? t.diagnostics.uploading : t.diagnostics.uploadBtn}</span>
@@ -187,7 +209,7 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
               <button
                 type="button"
                 onClick={onGoDashboard}
-                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-xs font-bold text-slate-800 hover:bg-slate-50"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
               >
                 <span>{t.diagnostics.goDashboard}</span>
                 <ArrowRight className="h-4 w-4" />

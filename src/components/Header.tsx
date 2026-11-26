@@ -1,6 +1,7 @@
 import React from 'react';
-import { BrainCircuit, Globe, LogOut, Megaphone, AlertTriangle } from 'lucide-react';
+import { BrainCircuit, Globe, LogOut, Megaphone, AlertTriangle, Palette } from 'lucide-react';
 import { useI18n } from '../i18n';
+import { ENABLE_THEME_SWATCH_DEBUG, THEME_OPTIONS, useTheme } from '../theme';
 import { isTauriRuntime } from '../api/bridge';
 import type { AppScreen, AuthUser, Manifest } from '../types';
 
@@ -20,6 +21,16 @@ export const Header: React.FC<HeaderProps> = ({
   onSignOut,
 }) => {
   const { lang, t, toggleLang } = useI18n();
+  const {
+    theme,
+    setTheme,
+    fontScale,
+    increaseFont,
+    decreaseFont,
+    canIncreaseFont,
+    canDecreaseFont,
+  } = useTheme();
+
   const notice = manifest?.notice;
   const noticeText = notice ? (lang === 'he' ? notice.he : notice.en) : '';
 
@@ -31,31 +42,85 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 backdrop-blur">
-      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3.5 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-sm">
-            <BrainCircuit className="h-5 w-5" />
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-600 text-white shadow-sm">
+            <BrainCircuit className="h-6 w-6" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-bold text-slate-900 sm:text-lg">{t.appName}</h1>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg font-bold text-slate-900 sm:text-xl">{t.appName}</h1>
               {!isTauriRuntime() && (
-                <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                   {t.previewBadge}
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500">{t.appSubtitle}</p>
+            <p className="text-xs text-slate-500 sm:text-sm">{t.appSubtitle}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {ENABLE_THEME_SWATCH_DEBUG && (
+            <div
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5"
+              title={lang === 'he' ? 'בחירת ערכת צבעים (מצב ניסוי)' : 'Theme color swatch (debug)'}
+            >
+              <Palette className="h-3.5 w-3.5 text-slate-500" />
+              {THEME_OPTIONS.map((opt) => {
+                const active = theme === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setTheme(opt.id)}
+                    title={lang === 'he' ? opt.labelHe : opt.labelEn}
+                    aria-label={lang === 'he' ? opt.labelHe : opt.labelEn}
+                    className={`h-4 w-4 rounded-full transition-transform ${
+                      active ? 'scale-125 ring-2 ring-slate-900 ring-offset-1' : 'opacity-75 hover:opacity-100'
+                    }`}
+                    style={{ backgroundColor: opt.swatchHex }}
+                  />
+                );
+              })}
+            </div>
+          )}
+
+          {/* Accessibility A- / A+ font size ticker */}
+          <div
+            className="inline-flex items-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50"
+            dir="ltr"
+            aria-label={lang === 'he' ? 'הגדלת והקטנת גופן' : 'Adjust font size'}
+          >
+            <button
+              type="button"
+              disabled={!canDecreaseFont}
+              onClick={decreaseFont}
+              title={lang === 'he' ? 'הקטן גופן' : 'Decrease font size'}
+              className="px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              A-
+            </button>
+            <span className="border-x border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-500">
+              {fontScale}%
+            </span>
+            <button
+              type="button"
+              disabled={!canIncreaseFont}
+              onClick={increaseFont}
+              title={lang === 'he' ? 'הגדל גופן' : 'Increase font size'}
+              className="px-2.5 py-1.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              A+
+            </button>
+          </div>
+
           <button
             type="button"
             onClick={toggleLang}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 sm:text-sm"
           >
-            <Globe className="h-3.5 w-3.5 text-indigo-600" />
+            <Globe className="h-4 w-4 text-brand-600" />
             <span>{t.langToggle}</span>
           </button>
 
@@ -71,7 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
                 title={t.signIn.signOut}
                 className="rounded p-1 text-slate-500 transition hover:bg-slate-200 hover:text-slate-800"
               >
-                <LogOut className="h-3.5 w-3.5" />
+                <LogOut className="h-4 w-4" />
               </button>
             </div>
           )}
@@ -80,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {user && screen !== 'sign_in' && (
         <nav className="border-t border-slate-100 bg-slate-50/70">
-          <div className="mx-auto flex max-w-6xl gap-1 overflow-x-auto px-4 py-1.5 sm:px-6">
+          <div className="mx-auto flex max-w-6xl gap-1.5 overflow-x-auto px-4 py-2 sm:px-6">
             {navItems.map((item) => {
               const active = screen === item.id;
               return (
@@ -88,9 +153,9 @@ export const Header: React.FC<HeaderProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onNavigate(item.id)}
-                  className={`whitespace-nowrap rounded-lg px-3.5 py-1.5 text-xs font-semibold transition sm:text-sm ${
+                  className={`whitespace-nowrap rounded-lg px-4 py-2 text-xs font-semibold transition sm:text-sm ${
                     active
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                      ? 'bg-brand-600 text-white shadow-sm'
                       : 'text-slate-600 hover:bg-slate-200/70 hover:text-slate-900'
                   }`}
                 >
@@ -104,12 +169,12 @@ export const Header: React.FC<HeaderProps> = ({
 
       {notice?.enabled && noticeText.trim().length > 0 && (
         <div
-          className={`border-t px-4 py-2 text-xs sm:px-6 sm:text-sm ${
+          className={`border-t px-4 py-2.5 text-xs sm:px-6 sm:text-sm ${
             notice.severity === 'urgent'
               ? 'border-rose-200 bg-rose-50 text-rose-900'
               : notice.severity === 'warning'
                 ? 'border-amber-200 bg-amber-50 text-amber-900'
-                : 'border-indigo-200 bg-indigo-50 text-indigo-900'
+                : 'border-brand-200 bg-brand-50 text-brand-900'
           }`}
         >
           <div className="mx-auto flex max-w-6xl items-center gap-2 font-medium">

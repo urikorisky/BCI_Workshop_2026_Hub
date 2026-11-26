@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { LanguageProvider } from './i18n';
+import { ThemeProvider } from './theme';
 import { fetchManifest } from './api/bridge';
 import { Header } from './components/Header';
 import { SignInView } from './views/SignInView';
@@ -73,9 +74,11 @@ const AppShell: React.FC = () => {
 };
 
 export const App: React.FC = () => (
-  <LanguageProvider>
-    <AppShell />
-  </LanguageProvider>
+  <ThemeProvider>
+    <LanguageProvider>
+      <AppShell />
+    </LanguageProvider>
+  </ThemeProvider>
 );
 
 export default App;

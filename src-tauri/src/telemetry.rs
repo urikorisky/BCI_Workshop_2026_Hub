@@ -1,6 +1,7 @@
 use crate::models::{TelemetryPayload, TelemetryResponse};
 use serde_json::json;
 use std::collections::HashMap;
+use sysinfo::System;
 
 #[tauri::command]
 pub async fn upload_telemetry(payload: TelemetryPayload) -> Result<TelemetryResponse, String> {
@@ -8,6 +9,23 @@ pub async fn upload_telemetry(payload: TelemetryPayload) -> Result<TelemetryResp
     if endpoint.is_empty() || endpoint.contains("REPLACE_WITH") {
         return Err("Telemetry endpoint URL is not configured in manifest.json yet.".to_string());
     }
+
+    let resolved_os_arch = if payload.os_arch.trim().is_empty() {
+        let os_name = System::name().unwrap_or_else(|| std::env::consts::OS.to_string());
+        let os_ver = System::os_version().unwrap_or_default();
+        format!("{os_name} {os_ver} ({})".trim(), std::env::consts::ARCH)
+            .replace("  ", " ")
+    } else {
+        payload.os_arch.clone()
+    };
+
+    let resolved_overall_status = if payload.overall_status.trim().is_empty()
+        && payload.event_type == "sign_in"
+    {
+        "SIGNED_IN".to_string()
+    } else {
+        payload.overall_status.clone()
+    };
 
     let mut checks_map: HashMap<String, serde_json::Value> = HashMap::new();
     for chk in &payload.checks {
@@ -33,8 +51,8 @@ pub async fn upload_telemetry(payload: TelemetryPayload) -> Result<TelemetryResp
         "id_token": payload.id_token,
         "event_type": payload.event_type,
         "hub_version": payload.hub_version,
-        "os_arch": payload.os_arch,
-        "overall_status": payload.overall_status,
+        "os_arch": resolved_os_arch,
+        "overall_status": resolved_overall_status,
         "checks": checks_map,
         "optional_apps_selected": payload.optional_apps_selected,
         "student_note": payload.student_note,

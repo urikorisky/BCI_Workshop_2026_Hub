@@ -83,7 +83,7 @@ export const HelpReportModal: React.FC<HelpReportModalProps> = ({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder={t.helpModal.placeholder}
-            className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-800 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            className="w-full rounded-xl border border-slate-300 p-3 text-sm text-slate-800 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
           />
 
           {result && (

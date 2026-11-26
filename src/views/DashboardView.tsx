@@ -112,13 +112,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Course Materials Hub */}
-      <section className="rounded-2xl border border-indigo-200 bg-gradient-to-br from-indigo-50 via-white to-slate-50 p-6 shadow-xs">
-        <h3 className="text-sm font-bold text-indigo-950">{t.dashboard.materialsSection}</h3>
+      <section className="rounded-2xl border border-brand-200 bg-gradient-to-br from-brand-50 via-white to-slate-50 p-6 shadow-xs">
+        <h3 className="text-base font-bold text-brand-950">{t.dashboard.materialsSection}</h3>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={() => openExternalUrl(gitbookUrl)}
-            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-indigo-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-brand-700"
           >
             <BookOpen className="h-4 w-4" />
             <span>{t.dashboard.openGitbook}</span>
@@ -136,24 +136,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={handleShortcut}
-            className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-3 text-xs font-semibold text-indigo-800 transition hover:bg-indigo-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-white px-4 py-3 text-xs font-semibold text-brand-800 transition hover:bg-brand-50 sm:text-sm"
           >
             <BookmarkPlus className="h-4 w-4" />
             <span>{t.dashboard.createShortcut}</span>
           </button>
         </div>
-        <p className="mt-2.5 text-xs text-slate-600">{t.dashboard.openGitbookDesc}</p>
+        <p className="mt-2.5 text-sm text-slate-600">{t.dashboard.openGitbookDesc}</p>
         {shortcutMsg && (
-          <p className="mt-2 text-xs font-semibold text-emerald-700">{shortcutMsg}</p>
+          <p className="mt-2 text-xs font-semibold text-emerald-700 sm:text-sm">{shortcutMsg}</p>
         )}
       </section>
 
       {/* Launch Installed Apps */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-slate-900">{t.dashboard.appsSection}</h3>
+          <h3 className="text-base font-bold text-slate-900">{t.dashboard.appsSection}</h3>
           {launchFeedback && (
-            <span className="text-xs font-medium text-indigo-700">{launchFeedback}</span>
+            <span className="text-xs font-medium text-brand-700 sm:text-sm">{launchFeedback}</span>
           )}
         </div>
 
@@ -198,12 +198,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Classroom Tools */}
       <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900">{t.dashboard.toolsSection}</h3>
+        <h3 className="text-base font-bold text-slate-900">{t.dashboard.toolsSection}</h3>
         <div className="mt-4 flex flex-wrap gap-3">
           <button
             type="button"
             onClick={() => setArduinoModalOpen(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-xs font-bold text-indigo-800 transition hover:bg-indigo-100"
+            className="inline-flex items-center gap-2 rounded-xl border border-brand-200 bg-brand-50 px-4 py-2.5 text-sm font-bold text-brand-800 transition hover:bg-brand-100"
           >
             <Usb className="h-4 w-4" />
             <span>{t.dashboard.findArduinoBtn}</span>

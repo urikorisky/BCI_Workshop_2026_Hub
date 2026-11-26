@@ -76,12 +76,23 @@ export async function scanInstalledComponents(): Promise<ComponentScanStatus[]> 
       'antigravity',
       'github_desktop',
     ];
-    return allIds.map((id) => ({
-      id,
-      installed: PREVIEW_INSTALLED_SET.has(id),
-      detected_version: PREVIEW_INSTALLED_SET.has(id) ? 'Detected' : undefined,
-      detected_path: PREVIEW_INSTALLED_SET.has(id) ? 'C:\\Program Files\\...' : undefined,
-    }));
+    return allIds.map((id) => {
+      if (id === 'python_env') {
+        return {
+          id,
+          installed: false,
+          detected_version: '3.14.0',
+          detected_path: 'python',
+          notes: 'incompatible_system_python',
+        };
+      }
+      return {
+        id,
+        installed: PREVIEW_INSTALLED_SET.has(id),
+        detected_version: PREVIEW_INSTALLED_SET.has(id) ? 'Detected' : undefined,
+        detected_path: PREVIEW_INSTALLED_SET.has(id) ? 'C:\\Program Files\\...' : undefined,
+      };
+    });
   }
   return invoke<ComponentScanStatus[]>('scan_installed_components');
 }
@@ -194,6 +205,7 @@ export async function uploadTelemetry(params: {
   user: AuthUser;
   eventType: 'sign_in' | 'diagnostics' | 'help_request';
   report?: DiagnosticReport;
+  osArch?: string;
   optionalAppsSelected: ComponentId[];
   studentNote?: string;
 }): Promise<TelemetryResponse> {
@@ -211,8 +223,8 @@ export async function uploadTelemetry(params: {
       id_token: params.user.id_token,
       event_type: params.eventType,
       hub_version: '0.1.0',
-      overall_status: params.report?.overall_status ?? '',
-      os_arch: params.report?.os_arch ?? '',
+      overall_status: params.report?.overall_status ?? (params.eventType === 'sign_in' ? 'SIGNED_IN' : ''),
+      os_arch: params.report?.os_arch ?? params.osArch ?? '',
       checks: params.report?.checks ?? [],
       optional_apps_selected: params.optionalAppsSelected,
       student_note: params.studentNote ?? '',

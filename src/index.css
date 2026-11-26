@@ -1,7 +1,94 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+}
+
+/* Default theme: BIU Academic Navy (non-purple) */
+:root,
+html[data-theme="biu-navy"] {
+  --brand-50: #eff6ff;
+  --brand-100: #dbeafe;
+  --brand-200: #bfdbfe;
+  --brand-300: #93c5fd;
+  --brand-400: #60a5fa;
+  --brand-500: #2563eb;
+  --brand-600: #1d4ed8;
+  --brand-700: #1e40af;
+  --brand-800: #1e3a8a;
+  --brand-900: #172554;
+  --brand-950: #0f172a;
+}
+
+html[data-theme="clinical-teal"] {
+  --brand-50: #f0fdfa;
+  --brand-100: #ccfbf1;
+  --brand-200: #99f6e4;
+  --brand-300: #5eead4;
+  --brand-400: #2dd4bf;
+  --brand-500: #14b8a6;
+  --brand-600: #0d9488;
+  --brand-700: #0f766e;
+  --brand-800: #115e59;
+  --brand-900: #134e4a;
+  --brand-950: #042f2e;
+}
+
+html[data-theme="forest-emerald"] {
+  --brand-50: #ecfdf5;
+  --brand-100: #d1fae5;
+  --brand-200: #a7f3d0;
+  --brand-300: #6ee7b7;
+  --brand-400: #34d399;
+  --brand-500: #10b981;
+  --brand-600: #059669;
+  --brand-700: #047857;
+  --brand-800: #065f46;
+  --brand-900: #064e3b;
+  --brand-950: #022c22;
+}
+
+html[data-theme="warm-terracotta"] {
+  --brand-50: #fffbeb;
+  --brand-100: #fef3c7;
+  --brand-200: #fde68a;
+  --brand-300: #fcd34d;
+  --brand-400: #fb923c;
+  --brand-500: #ea580c;
+  --brand-600: #c2410c;
+  --brand-700: #9a3412;
+  --brand-800: #7c2d12;
+  --brand-900: #431407;
+  --brand-950: #2a0d04;
+}
+
+html[data-theme="ink-slate"] {
+  --brand-50: #f8fafc;
+  --brand-100: #f1f5f9;
+  --brand-200: #e2e8f0;
+  --brand-300: #cbd5e1;
+  --brand-400: #94a3b8;
+  --brand-500: #475569;
+  --brand-600: #334155;
+  --brand-700: #1e293b;
+  --brand-800: #0f172a;
+  --brand-900: #090d16;
+  --brand-950: #020617;
+}
+
 :root {
   font-family: "Heebo", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
 }
 
 body {

@@ -51,14 +51,14 @@ export const en: Translations = {
   onboarding: {
     heading: 'Component Selection & Guided Setup',
     subheading:
-      'Your computer has been pre-scanned. Installing every large program or environment is completely optional — pick what is missing or what you want to use, with clear class context for each item.',
+      'Your computer was pre-scanned. Core workshop tools are marked as Required and pre-selected if missing; IDEs and companion tools are completely optional.',
     rescanBtn: 'Re-Scan System',
     scanning: 'Scanning installed programs and drivers...',
     alreadyInstalled: 'Already Installed ✓',
     notFound: 'Not Found',
     optionalBadge: 'Optional',
-    recommendedBadge: 'Recommended',
-    selectAllMissing: 'Select Recommended Missing',
+    requiredBadge: 'Required',
+    selectAllRequired: 'Select Missing Required Tools',
     clearSelection: 'Clear Selection',
     installSelected: 'Install Selected Components',
     installing: 'Installing...',
@@ -67,6 +67,13 @@ export const en: Translations = {
     manualNeeded: 'Manual Step Required',
     detectedAt: 'Detected at:',
     liveLogTitle: 'Live Installation Log',
+    pythonVenvReady: 'Workshop isolated .venv is already ready ({ver}).',
+    pythonReuseCompatible:
+      'Compatible Python {ver} detected — the installer will reuse it to create an isolated .venv.',
+    pythonIncompatibleFound:
+      'Python {ver} detected (incompatible with pylsl/brainflow which require 3.10–3.12). An isolated Python 3.11 environment will be installed without touching your existing Python.',
+    pythonNotFound:
+      'No compatible Python detected — an isolated Python 3.11 environment will be installed inside the workshop folder.',
   },
   components: {
     python_env: {
@@ -74,7 +81,7 @@ export const en: Translations = {
       subtitle: 'Includes pyserial, numpy, scipy, PyQt6, sounddevice, pylsl, mne, brainflow',
       whyNeeded:
         'Core computational engine for Days 1–5: reading Arduino serial streams, ECG/EDA/EEG signal processing, LSL time-sync, and interactive lab experiments. Reuses compatible Python 3.10–3.12 if present, or installs an isolated env with zero admin prompts.',
-      recommendedTag: 'Highly Recommended',
+      recommendedTag: 'Required for Workshop',
       approxSize: '~450 MB',
     },
     jupyterlab: {
@@ -97,7 +104,7 @@ export const en: Translations = {
       subtitle: 'Includes arduino:avr, Servo, AccelStepper, Adafruit ADS1X15, NeoPixel',
       whyNeeded:
         'Needed on Days 1–3 to upload sketches to Arduino Uno, drive servos/steppers, wire biosensors, and view live streams in the Serial Plotter.',
-      recommendedTag: 'Essential for Days 1–3',
+      recommendedTag: 'Required for Workshop',
       approxSize: '~220 MB',
     },
     drivers: {
@@ -105,21 +112,23 @@ export const en: Translations = {
       subtitle: 'Serial drivers for Arduino Uno clones (CH340) & OpenBCI dongle (FTDI)',
       whyNeeded:
         'Required so your laptop recognizes the Arduino COM/Serial port (CH340 chip) and the OpenBCI EEG communication dongle (FTDI chip).',
-      recommendedTag: 'Essential for Hardware',
+      recommendedTag: 'Required for Workshop',
       approxSize: '~10 MB',
     },
     openbci_gui: {
       title: 'OpenBCI GUI (Pinned Latest Release)',
       subtitle: 'Official EEG visualization & electrode impedance inspection app',
       whyNeeded:
-        'Used on Days 4–5 to visualize live scalp EEG channels, check electrode contact impedance, and stream brainwaves into Lab Streaming Layer.',
+        'Required on Days 4–5 to visualize live scalp EEG channels, check electrode contact impedance, and stream brainwaves into Lab Streaming Layer.',
+      recommendedTag: 'Required for Workshop',
       approxSize: '~250 MB',
     },
     lab_recorder: {
       title: 'LSL LabRecorder',
       subtitle: 'Standalone recorder saving time-synchronized multi-sensor .xdf files',
       whyNeeded:
-        'Used from Day 2 onward to record aligned ECG, GSR, EEG, and event markers into one unified .xdf file.',
+        'Required from Day 2 onward to record aligned ECG, GSR, EEG, and event markers into one unified .xdf file.',
+      recommendedTag: 'Required for Workshop',
       approxSize: '~45 MB',
     },
     antigravity: {
@@ -193,11 +202,11 @@ export const en: Translations = {
     heading: 'Hardware-Free System Verification',
     subheading:
       'Automatically tests Arduino offline compilation, drivers, Python GUI stack, synthetic LSL loopback, BrainFlow, and microphone permissions with no physical hardware attached.',
-    runBtn: 'Run System Verification Now',
+    runBtn: 'Re-Run Verification',
     running: 'Running diagnostic suite...',
-    uploadBtn: 'Send Diagnostic Report to Instructor',
-    uploading: 'Uploading verified report...',
-    uploadSuccess: 'Report successfully saved to the workshop dashboard!',
+    uploadBtn: 'Re-Send Diagnostic Report',
+    uploading: 'Uploading verified report to instructor...',
+    uploadSuccess: 'Report automatically saved to the workshop dashboard ✓',
     uploadError: 'Failed to upload report:',
     goDashboard: 'Continue to Daily Dashboard →',
     overallLabels: {

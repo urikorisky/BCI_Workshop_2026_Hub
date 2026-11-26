@@ -59,14 +59,14 @@ export const he = {
   onboarding: {
     heading: 'בחירת רכיבים והתקנה מודרכת',
     subheading:
-      'המערכת סרקה את המחשב מראש. התקנת כל תוכנה או סביבה היא אופציונלית לגמרי — בחרו רק מה שחסר או מה שתרצו לעבוד איתו, וקראו למה כל כלי משמש בסדנה.',
+      'המערכת סרקה את המחשב מראש. רכיבי הליבה מסומנים כחובה לסדנה וייבחרו אוטומטית אם הם חסרים; תוכנות וסביבות משלימות הן אופציונליות לגמרי — קראו למה כל כלי משמש.',
     rescanBtn: 'סרוק מחדש',
     scanning: 'סורק תוכנות ודרייברים מותקנים...',
     alreadyInstalled: 'מותקן כבר ✓',
     notFound: 'לא נמצא במחשב',
     optionalBadge: 'אופציונלי',
-    recommendedBadge: 'מומלץ לסדנה',
-    selectAllMissing: 'סמן את כל המומלצים שחסרים',
+    requiredBadge: 'חובה לסדנה',
+    selectAllRequired: 'סמן את כל רכיבי החובה שחסרים',
     clearSelection: 'נקה בחירה',
     installSelected: 'התחל התקנה של הרכיבים שנבחרו',
     installing: 'מתקין...',
@@ -75,14 +75,20 @@ export const he = {
     manualNeeded: 'נדרשת פעולה ידנית',
     detectedAt: 'זוהה ב:',
     liveLogTitle: 'יומן התקנה בזמן אמת',
+    pythonVenvReady: 'סביבת הסדנה המבודדת (.venv) מוכנה במחשב ({ver}).',
+    pythonReuseCompatible:
+      'זוהה Python {ver} תואם במחשב — המתקין ישתמש בו ליצירת סביבה מבודדת בתיקיית הסדנה.',
+    pythonIncompatibleFound:
+      'זוהה Python {ver} במחשב (אינו תואם ל-pylsl/brainflow שדורשים 3.10–3.12). תותקן סביבת Python 3.11 מבודדת בתיקיית הסדנה מבלי לפגוע בהתקנה הקיימת שלך.',
+    pythonNotFound: 'לא זוהה Python תואם — תותקן סביבת Python 3.11 מבודדת בתיקיית הסדנה.',
   },
   components: {
     python_env: {
       title: 'סביבת Python ייעודית לסדנה (3.10–3.12)',
       subtitle: 'כולל pyserial, numpy, scipy, PyQt6, sounddevice, pylsl, mne, brainflow',
       whyNeeded:
-        'הלב החישובי של הסדנה (ימים 1–5): קריאת נתונים מ-Arduino, עיבוד אותות אלקטרופיזיולוגיים (ECG/EDA/EEG), סינכרון בזמן אמת (LSL) וניסויים אינטראקטיביים. המערכת תנצל Python 3.10–3.12 קיים אם נמצא ותקין, או תתקין סביבה מבודדת ללא צורך בהרשאות מנהל.',
-      recommendedTag: 'מומלץ מאוד',
+        'הלב החישובי של הסדנה (ימים 1–5): קריאת נתונים מ-Arduino, עיבוד אותות אלקטרופיזיולוגיים (ECG/EDA/EEG), סינכרון בזמן אמת (LSL) וניסויים אינטראקטיביים. אם יש Python תואם (3.10–3.12) הוא ינוצל, ואחרת תותקן סביבה מבודדת ללא צורך בהרשאות מנהל.',
+      recommendedTag: 'חובה לסדנה',
       approxSize: '~450 MB',
     },
     jupyterlab: {
@@ -105,7 +111,7 @@ export const he = {
       subtitle: 'כולל arduino:avr, Servo, AccelStepper, Adafruit ADS1X15, NeoPixel',
       whyNeeded:
         'נדרש בימים 1–3 לתכנות לוחות ה-Arduino Uno, הפעלת מנועים (סרוו וצעד) וחיישנים ביולוגיים, וכן לצפייה בזמן אמת ב-Serial Plotter.',
-      recommendedTag: 'חיוני לימים 1–3',
+      recommendedTag: 'חובה לסדנה',
       approxSize: '~220 MB',
     },
     drivers: {
@@ -113,21 +119,23 @@ export const he = {
       subtitle: 'מנהלי התקן לחיבור USB של לוחות ה-Arduino ודונגל ה-OpenBCI',
       whyNeeded:
         'בלי דרייברים אלו המחשב לא יזהה את יציאת ה-COM/Serial של לוחות ה-Arduino (שבב CH340) או את כרטיס התקשורת של מערכת ה-EEG של OpenBCI (שבב FTDI).',
-      recommendedTag: 'חיוני לחיבור לוחות',
+      recommendedTag: 'חובה לסדנה',
       approxSize: '~10 MB',
     },
     openbci_gui: {
       title: 'OpenBCI GUI (גרסה עדכנית מוצמדת)',
       subtitle: 'ממשק ויזואליזציה ובדיקת אלקטרודות למערכת ה-EEG',
       whyNeeded:
-        'תוכנת המקור של OpenBCI לשימוש בימים 4–5: צפייה בגלי מוח בזמן אמת, בדיקת עכבת אלקטרודות (Impedance), והזרמת נתונים ל-LSL.',
+        'תוכנת החובה של OpenBCI לימים 4–5: צפייה בגלי מוח בזמן אמת, בדיקת עכבת אלקטרודות (Impedance), והזרמת נתונים ל-LSL.',
+      recommendedTag: 'חובה לסדנה',
       approxSize: '~250 MB',
     },
     lab_recorder: {
       title: 'LSL LabRecorder (מקליט זרמים מסונכרנים)',
       subtitle: 'הקלטת קבצי .xdf מרובי חיישנים בסינכרון זמנים מדויק',
       whyNeeded:
-        'מאפשר להקליט יחד זרמי ECG, GSR, EEG וסמני אירועים לקובץ .xdf אחיד לניתוח מדויק החל מיום 2.',
+        'רכיב חובה החל מיום 2 להקלטת זרמי ECG, GSR, EEG וסמני אירועים יחד לקובץ .xdf אחיד בסינכרון זמנים מדויק.',
+      recommendedTag: 'חובה לסדנה',
       approxSize: '~45 MB',
     },
     antigravity: {
@@ -201,11 +209,11 @@ export const he = {
     heading: 'אימות סביבה ללא חיבור חומרה',
     subheading:
       'בדיקה אוטומטית של כל הרכיבים, הידור קוד Arduino ללא כרטיס מחובר, זרם LSL מדומה, BrainFlow והרשאות מיקרופון.',
-    runBtn: 'הרץ בדיקות מערכת עכשיו',
+    runBtn: 'הרץ בדיקות מערכת שוב',
     running: 'מריץ בדיקות אבחון...',
-    uploadBtn: 'שלח דוח אבחון למרצה',
-    uploading: 'שולח דוח מאומת...',
-    uploadSuccess: 'הדוח נשמר בהצלחה במערכת הקורס!',
+    uploadBtn: 'שלח דוח אבחון שוב',
+    uploading: 'שולח דוח מאומת למרצה...',
+    uploadSuccess: 'הדוח נשלח ונשמר אוטומטית במערכת הקורס ✓',
     uploadError: 'שגיאה בשליחת הדוח:',
     goDashboard: 'המשך ללוח הבקרה היומי ←',
     overallLabels: {
