@@ -103,41 +103,41 @@
       }
     },
     "openbci_gui": {
-      "version": "5.2.2",
+      "version": "6.0.0-beta.1",
       "approx_size_mb": 250,
       "windows": {
-        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v5.2.2/openbcigui_v5.2.2_windows64.zip",
+        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v6.0.0-beta.1/openbcigui_v6.0.0-beta.1_windows64.zip",
         "sha256": "",
         "kind": "zip"
       },
       "macos_arm64": {
-        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v5.2.2/openbcigui_v5.2.2_macosx.dmg",
+        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v6.0.0-beta.1/openbcigui_v6.0.0-beta.1_macosx.dmg",
         "sha256": "",
         "kind": "dmg"
       },
       "macos_x64": {
-        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v5.2.2/openbcigui_v5.2.2_macosx.dmg",
+        "url": "https://github.com/OpenBCI/OpenBCI_GUI/releases/download/v6.0.0-beta.1/openbcigui_v6.0.0-beta.1_macosx.dmg",
         "sha256": "",
         "kind": "dmg"
       }
     },
     "lab_recorder": {
-      "version": "1.16.4",
+      "version": "1.18.1",
       "approx_size_mb": 45,
       "windows": {
-        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.16.4/LabRecorder-1.16.4-Win_amd64.zip",
+        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.18.1/LabRecorder-1.18.1-Win_x86_64.zip",
         "sha256": "",
         "kind": "zip"
       },
       "macos_arm64": {
-        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.16.4/LabRecorder-1.16.4-OSX_amd64.dmg",
+        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.18.1/LabRecorder-1.18.1-macOS_x86_64-signed.tar.gz",
         "sha256": "",
-        "kind": "dmg"
+        "kind": "targz"
       },
       "macos_x64": {
-        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.16.4/LabRecorder-1.16.4-OSX_amd64.dmg",
+        "url": "https://github.com/labstreaminglayer/App-LabRecorder/releases/download/v1.18.1/LabRecorder-1.18.1-macOS_x86_64-signed.tar.gz",
         "sha256": "",
-        "kind": "dmg"
+        "kind": "targz"
       }
     },
     "thonny": {

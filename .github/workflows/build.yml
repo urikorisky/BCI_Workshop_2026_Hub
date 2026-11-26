@@ -10,6 +10,144 @@ permissions:
   contents: write
 
 jobs:
+  clean-room-smoke-qa:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Setup Python 3.11 for QA scripts
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify direct download URLs in manifest.json
+        shell: bash
+        run: |
+          python - << 'EOF'
+          import json, urllib.request
+          manifest = json.load(open("manifest.json", encoding="utf-8"))
+          failures = []
+          for comp_id, comp in manifest["components"].items():
+              for plat in ("windows", "macos_arm64", "macos_x64"):
+                  art = comp.get(plat)
+                  if not art or art.get("kind") == "browser_page":
+                      continue
+                  url = art["url"]
+                  try:
+                      req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "bci-hub-qa"})
+                      with urllib.request.urlopen(req, timeout=15) as r:
+                          print(f"OK {r.status} {comp_id}.{plat}")
+                  except Exception as e:
+                      failures.append(f"{comp_id}.{plat}: {url} -> {e}")
+          if failures:
+              raise SystemExit("Broken manifest URLs:\n" + "\n".join(failures))
+          EOF
+
+      - name: Clean-room Python 3.11 + LSL + BrainFlow + GUI smoke test
+        shell: bash
+        run: |
+          uv python install 3.11
+          uv venv .smoke-venv --python 3.11
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            VENV_PY=".smoke-venv/Scripts/python.exe"
+          else
+            VENV_PY=".smoke-venv/bin/python"
+          fi
+          PKGS=$(python -c "import json; m=json.load(open('manifest.json')); print(' '.join(m['python']['core_packages'] + m['python']['jupyter_packages']))")
+          uv pip install --python "$VENV_PY" $PKGS
+          QT_QPA_PLATFORM=offscreen "$VENV_PY" - << 'EOF'
+          import sys, time
+          import serial, numpy, scipy, PyQt6, sounddevice, matplotlib, mne, jupyterlab, tkinter
+          import pylsl
+          from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+
+          # 1. Synthetic LSL loopback
+          info = pylsl.StreamInfo("CIQaStream", "EEG", 1, 100, "float32", "ci_qa_01")
+          outlet = pylsl.StreamOutlet(info)
+          streams = pylsl.resolve_byprop("name", "CIQaStream", timeout=5.0)
+          assert len(streams) >= 1, "Failed resolving synthetic LSL stream"
+          inlet = pylsl.StreamInlet(streams[0])
+          outlet.push_sample([42.0])
+          sample, _ = inlet.pull_sample(timeout=2.0)
+          assert sample is not None and abs(sample[0] - 42.0) < 1e-3
+
+          # 2. Synthetic BrainFlow stream
+          BoardShim.disable_board_logger()
+          board = BoardShim(BoardIds.SYNTHETIC_BOARD.value, BrainFlowInputParams())
+          board.prepare_session()
+          board.start_stream()
+          time.sleep(0.4)
+          data = board.get_board_data()
+          board.stop_stream()
+          board.release_session()
+          assert data.shape[1] > 0, "No samples from BrainFlow SYNTHETIC_BOARD"
+
+          # 3. Audio devices query
+          _ = sounddevice.query_devices()
+          print("CLEAN-ROOM PYTHON QA PASSED on", sys.platform, sys.version.split()[0])
+          EOF
+
+      - name: Clean-room Arduino CLI + Servo/AccelStepper offline compile test
+        shell: bash
+        run: |
+          python - << 'EOF'
+          import json, os, platform, shutil, subprocess, tarfile, tempfile, urllib.request, zipfile
+
+          manifest = json.load(open("manifest.json", encoding="utf-8"))
+          sys_name = platform.system()
+          machine = platform.machine().lower()
+          if sys_name == "Windows":
+              art = manifest["components"]["arduino_cli"]["windows"]
+          elif "arm" in machine or "aarch64" in machine:
+              art = manifest["components"]["arduino_cli"]["macos_arm64"]
+          else:
+              art = manifest["components"]["arduino_cli"]["macos_x64"]
+
+          tmp = tempfile.mkdtemp(prefix="bci_arduino_qa_")
+          arc_path = os.path.join(tmp, "arduino-cli.pkg")
+          urllib.request.urlretrieve(art["url"], arc_path)
+          cli_dir = os.path.join(tmp, "cli")
+          os.makedirs(cli_dir, exist_ok=True)
+          if art["kind"] == "zip":
+              with zipfile.ZipFile(arc_path) as zf:
+                  zf.extractall(cli_dir)
+          else:
+              with tarfile.open(arc_path, "r:gz") as tf:
+                  tf.extractall(cli_dir)
+
+          cli_bin = os.path.join(cli_dir, "arduino-cli.exe" if sys_name == "Windows" else "arduino-cli")
+          env = os.environ.copy()
+          env["ARDUINO_DIRECTORIES_DATA"] = os.path.join(tmp, "data")
+          env["ARDUINO_DIRECTORIES_DOWNLOADS"] = os.path.join(tmp, "downloads")
+          env["ARDUINO_DIRECTORIES_USER"] = os.path.join(tmp, "user")
+
+          subprocess.run([cli_bin, "core", "update-index"], env=env, check=True)
+          for core in manifest["arduino"]["cores"]:
+              subprocess.run([cli_bin, "core", "install", core], env=env, check=True)
+          subprocess.run([cli_bin, "lib", "update-index"], env=env, check=True)
+          for lib in manifest["arduino"]["libraries"]:
+              subprocess.run([cli_bin, "lib", "install", lib], env=env, check=True)
+
+          sketch_dir = os.path.join(tmp, "smoke_sketch")
+          os.makedirs(sketch_dir, exist_ok=True)
+          with open(os.path.join(sketch_dir, "smoke_sketch.ino"), "w", encoding="utf-8") as f:
+              f.write("#include <Servo.h>\n#include <AccelStepper.h>\nServo s;\nvoid setup(){ s.attach(3); }\nvoid loop(){}\n")
+
+          subprocess.run([cli_bin, "compile", "--fqbn", "arduino:avr:uno", sketch_dir], env=env, check=True)
+          shutil.rmtree(tmp, ignore_errors=True)
+          print("CLEAN-ROOM ARDUINO COMPILE QA PASSED")
+          EOF
+
   build-tauri:
     strategy:
       fail-fast: false
@@ -51,13 +189,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
-          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Future code-signing secrets (uncomment when certificates are configured):
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           tagName: v__VERSION__
           releaseName: 'BCI Workshop Hub v__VERSION__'
