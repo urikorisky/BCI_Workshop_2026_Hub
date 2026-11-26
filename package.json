@@ -1,7 +1,7 @@
 {
   "name": "bci-workshop-2026-hub",
   "private": true,
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Cross-platform onboarding and daily classroom hub for BIU BCI Workshop 2026",
   "type": "module",
   "scripts": {

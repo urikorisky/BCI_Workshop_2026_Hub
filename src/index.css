@@ -14,8 +14,7 @@
   --color-brand-950: var(--brand-950);
 }
 
-/* Default theme: BIU Academic Navy (non-purple) */
-:root,
+/* Secondary blue theme option */
 html[data-theme="biu-navy"] {
   --brand-50: #eff6ff;
   --brand-100: #dbeafe;
@@ -72,6 +71,8 @@ html[data-theme="warm-terracotta"] {
   --brand-950: #2a0d04;
 }
 
+/* Default workshop theme: Ink Slate (neutral gray) */
+:root,
 html[data-theme="ink-slate"] {
   --brand-50: #f8fafc;
   --brand-100: #f1f5f9;

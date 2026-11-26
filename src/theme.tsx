@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-// Flip to false once you pick your preferred workshop color theme.
-export const ENABLE_THEME_SWATCH_DEBUG = true;
+// Swatch debug disabled after selecting ink-slate as the workshop theme.
+export const ENABLE_THEME_SWATCH_DEBUG = false;
+const DEFAULT_THEME: ThemeId = 'ink-slate';
 
 export type ThemeId =
   | 'biu-navy'
@@ -46,8 +47,11 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeId>(() => {
+    if (!ENABLE_THEME_SWATCH_DEBUG) {
+      return DEFAULT_THEME;
+    }
     const saved = localStorage.getItem(THEME_STORAGE_KEY) as ThemeId | null;
-    return THEME_OPTIONS.some((o) => o.id === saved) ? (saved as ThemeId) : 'biu-navy';
+    return THEME_OPTIONS.some((o) => o.id === saved) ? (saved as ThemeId) : DEFAULT_THEME;
   });
 
   const [fontScale, setFontScale] = useState<number>(() => {

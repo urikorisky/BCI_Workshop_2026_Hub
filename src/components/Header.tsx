@@ -2,7 +2,7 @@ import React from 'react';
 import { BrainCircuit, Globe, LogOut, Megaphone, AlertTriangle, Palette } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { ENABLE_THEME_SWATCH_DEBUG, THEME_OPTIONS, useTheme } from '../theme';
-import { isTauriRuntime } from '../api/bridge';
+import { HUB_VERSION, isTauriRuntime } from '../api/bridge';
 import type { AppScreen, AuthUser, Manifest } from '../types';
 
 interface HeaderProps {
@@ -50,6 +50,12 @@ export const Header: React.FC<HeaderProps> = ({
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-lg font-bold text-slate-900 sm:text-xl">{t.appName}</h1>
+              <span
+                className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600"
+                dir="ltr"
+              >
+                v{HUB_VERSION}
+              </span>
               {!isTauriRuntime() && (
                 <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
                   {t.previewBadge}

@@ -15,6 +15,8 @@ import type {
   TelemetryResponse,
 } from '../types';
 
+export const HUB_VERSION = '0.1.5';
+
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
@@ -148,7 +150,7 @@ export async function runDiagnostics(selectedApps: ComponentId[]): Promise<Diagn
     return {
       timestamp: new Date().toISOString(),
       os_arch: 'windows / x86_64 (preview)',
-      hub_version: '0.1.4',
+      hub_version: HUB_VERSION,
       overall_status: 'warn',
       checks: [
         {
@@ -238,7 +240,7 @@ export async function uploadTelemetry(params: {
       endpoint: params.endpoint,
       id_token: params.user.id_token,
       event_type: params.eventType,
-      hub_version: '0.1.4',
+      hub_version: HUB_VERSION,
       overall_status:
         params.overallStatus ??
         params.report?.overall_status ??
