@@ -155,6 +155,7 @@ fn friendly_component_name(id: &str) -> &'static str {
         "thonny" => "Thonny IDE",
         "openbci_gui" => "OpenBCI GUI",
         "lab_recorder" => "LabRecorder",
+        "serial_port_lsl" => "SerialPortLSL",
         "antigravity" => "Antigravity",
         "github_desktop" => "GitHub Desktop",
         "drivers" => "CH340 / FTDI Drivers",
@@ -237,6 +238,20 @@ pub async fn get_uninstall_plan() -> Result<UninstallPlan, String> {
             label_en: "LSL LabRecorder (workshop portable folder)".to_string(),
             path_display: lab_portable.to_string_lossy().to_string(),
             size_mb: bytes_to_mb(dir_size_bytes(&lab_portable)),
+            default_checked: true,
+            requires_external_uninstaller: false,
+        });
+    }
+
+    let serial_lsl_dir = tools.join("SerialPortLSL");
+    if serial_lsl_dir.exists() {
+        items.push(UninstallItem {
+            id: "serial_port_lsl_portable".to_string(),
+            category: "workshop_data".to_string(),
+            label_he: "SerialPortLSL (עותק מקומי בתיקיית הסדנה)".to_string(),
+            label_en: "SerialPortLSL (workshop portable folder)".to_string(),
+            path_display: serial_lsl_dir.to_string_lossy().to_string(),
+            size_mb: bytes_to_mb(dir_size_bytes(&serial_lsl_dir)),
             default_checked: true,
             requires_external_uninstaller: false,
         });
@@ -552,6 +567,9 @@ pub async fn execute_uninstall(
             }
             "lab_recorder_portable" => {
                 remove_path_if_exists(&tools.join("LabRecorder"), &mut removed, &mut errors);
+            }
+            "serial_port_lsl_portable" => {
+                remove_path_if_exists(&tools.join("SerialPortLSL"), &mut removed, &mut errors);
             }
             "downloads_cache" => {
                 remove_path_if_exists(&root.join("downloads"), &mut removed, &mut errors);

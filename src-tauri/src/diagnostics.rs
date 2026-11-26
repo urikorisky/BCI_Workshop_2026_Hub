@@ -2,7 +2,8 @@ use crate::models::{DiagnosticCheckResult, DiagnosticReport, SerialDeviceInfo};
 use crate::scanner::{
     detect_antigravity_path, detect_arduino_ide_path, detect_drivers_status,
     detect_github_desktop_path, detect_lab_recorder_path, detect_openbci_gui_path,
-    detect_thonny_path, run_silent_command, run_silent_command_with_env,
+    detect_serial_port_lsl_path, detect_thonny_path, run_silent_command,
+    run_silent_command_with_env,
 };
 use crate::system::{
     default_workshop_root, free_disk_gb_for_path, is_ascii_str, workshop_arduino_cli,
@@ -177,6 +178,7 @@ fn check_optional_apps(selected_apps: &[String]) -> DiagnosticCheckResult {
             "thonny" => detect_thonny_path().is_some(),
             "openbci_gui" => detect_openbci_gui_path().is_some(),
             "lab_recorder" => detect_lab_recorder_path().is_some(),
+            "serial_port_lsl" => detect_serial_port_lsl_path().is_some(),
             "antigravity" => detect_antigravity_path().is_some(),
             "github_desktop" => detect_github_desktop_path().is_some(),
             "python_env" => workshop_venv_python().exists(),

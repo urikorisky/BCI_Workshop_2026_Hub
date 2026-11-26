@@ -151,6 +151,14 @@ export const he = {
       recommendedTag: 'חובה לסדנה',
       approxSize: '~45 MB',
     },
+    serial_port_lsl: {
+      title: 'SerialPortLSL (ממיר Serial/COM ל-LSL)',
+      subtitle: 'שליחת זרם נתונים מבקר ה-Arduino ישירות לרשת LSL לצורך הקלטה ב-LabRecorder',
+      whyNeeded:
+        'רכיב חובה לחיבור חיישנים ו-Arduino ל-LSL בזמן אמת (ב-Windows: גרסת App-SerialPort הרשמית; ב-Mac: ממשק Python מובנה).',
+      recommendedTag: 'חובה לסדנה',
+      approxSize: '~10 MB',
+    },
     antigravity: {
       title: 'Antigravity (סביבת פיתוח מבוססת סוכן AI)',
       subtitle: 'עוזר קוד חכם לכתיבה, ניפוי שגיאות והבנת דפי נתונים',
@@ -297,6 +305,7 @@ export const he = {
       arduino_ide: { name: 'Arduino IDE', desc: 'קוד לבקר ו-Serial Plotter' },
       openbci_gui: { name: 'OpenBCI GUI', desc: 'צפייה בגלי מוח ובדיקת אלקטרודות' },
       lab_recorder: { name: 'LabRecorder', desc: 'הקלטת קבצי LSL (.xdf)' },
+      serial_port_lsl: { name: 'SerialPortLSL', desc: 'הזרמת נתוני Serial/COM ל-LSL' },
       antigravity: { name: 'Antigravity', desc: 'סביבת עבודה עם סוכן AI' },
       github_desktop: { name: 'GitHub Desktop', desc: 'ניהול קוד מ-GitHub' },
     },

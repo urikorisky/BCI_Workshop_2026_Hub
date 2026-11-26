@@ -246,6 +246,28 @@ pub fn detect_lab_recorder_path() -> Option<String> {
     }
 }
 
+pub fn detect_serial_port_lsl_path() -> Option<String> {
+    let tools = workshop_tools_dir().join("SerialPortLSL");
+    #[cfg(target_os = "windows")]
+    {
+        find_entry_recursive(&tools, "SerialPortLSL.exe", 2)
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let script = tools.join("serial_port_lsl.py");
+        if script.is_file() {
+            Some(script.to_string_lossy().to_string())
+        } else {
+            None
+        }
+    }
+    #[cfg(all(not(target_os = "windows"), not(target_os = "macos")))]
+    {
+        let _ = tools;
+        None
+    }
+}
+
 pub fn detect_antigravity_path() -> Option<String> {
     #[cfg(target_os = "windows")]
     {
@@ -476,6 +498,16 @@ pub async fn scan_installed_components() -> Result<Vec<ComponentScanStatus>, Str
         installed: lab_rec_path.is_some(),
         detected_version: lab_rec_path.as_ref().map(|_| "Installed".to_string()),
         detected_path: lab_rec_path,
+        notes: None,
+    });
+
+    // 7b. serial_port_lsl
+    let serial_lsl_path = detect_serial_port_lsl_path();
+    results.push(ComponentScanStatus {
+        id: "serial_port_lsl".to_string(),
+        installed: serial_lsl_path.is_some(),
+        detected_version: serial_lsl_path.as_ref().map(|_| "Installed".to_string()),
+        detected_path: serial_lsl_path,
         notes: None,
     });
 

@@ -3,8 +3,9 @@ use crate::models::{
 };
 use crate::scanner::{
     detect_antigravity_path, detect_arduino_ide_path, detect_github_desktop_path,
-    detect_lab_recorder_path, detect_openbci_gui_path, detect_thonny_path,
-    find_compatible_system_python, run_silent_command, run_silent_command_with_env,
+    detect_lab_recorder_path, detect_openbci_gui_path, detect_serial_port_lsl_path,
+    detect_thonny_path, find_compatible_system_python, run_silent_command,
+    run_silent_command_with_env,
 };
 use crate::system::{
     default_workshop_root, workshop_arduino_cli, workshop_downloads_dir, workshop_tools_dir,
@@ -24,6 +25,8 @@ const HUB_RELEASES_API_URL: &str =
     "https://api.github.com/repos/urikorisky/BCI_Workshop_2026_Hub/releases/latest";
 const HUB_RELEASES_WEB_URL: &str =
     "https://github.com/urikorisky/BCI_Workshop_2026_Hub/releases/latest";
+#[cfg(target_os = "macos")]
+const MACOS_SERIAL_PORT_LSL_PY: &str = include_str!("../resources/serial_port_lsl.py");
 
 fn emit_progress(app: &tauri::AppHandle, component_id: &str, stage: &str, percent: u8, msg: &str) {
     let _ = app.emit(
@@ -562,6 +565,7 @@ async fn install_generic_component(
         let folder_name = match id {
             "openbci_gui" => "OpenBCI_GUI",
             "lab_recorder" => "LabRecorder",
+            "serial_port_lsl" => "SerialPortLSL",
             _ => id,
         };
         let target_dir = workshop_tools_dir().join(folder_name);
@@ -597,6 +601,53 @@ async fn install_generic_component(
     })
 }
 
+async fn install_serial_port_lsl(
+    app: &tauri::AppHandle,
+    manifest: &Manifest,
+) -> Result<InstallActionResult, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let _ = manifest;
+        let target_dir = workshop_tools_dir().join("SerialPortLSL");
+        std::fs::create_dir_all(&target_dir)
+            .map_err(|e| format!("Failed creating SerialPortLSL dir: {e}"))?;
+        let script_path = target_dir.join("serial_port_lsl.py");
+        std::fs::write(&script_path, MACOS_SERIAL_PORT_LSL_PY)
+            .map_err(|e| format!("Failed writing serial_port_lsl.py: {e}"))?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(meta) = std::fs::metadata(&script_path) {
+                let mut perms = meta.permissions();
+                perms.set_mode(0o755);
+                let _ = std::fs::set_permissions(&script_path, perms);
+            }
+        }
+        emit_progress(
+            app,
+            "serial_port_lsl",
+            "done",
+            100,
+            "SerialPortLSL (macOS GUI) ready.",
+        );
+        Ok(InstallActionResult {
+            id: "serial_port_lsl".to_string(),
+            status: "completed".to_string(),
+            message: format!(
+                "Installed macOS SerialPortLSL helper to {}",
+                script_path.display()
+            ),
+            manual_action_type: None,
+            manual_url: None,
+            detail_log: None,
+        })
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        install_generic_component(app, manifest, "serial_port_lsl").await
+    }
+}
+
 #[tauri::command]
 pub async fn install_component(
     app: tauri::AppHandle,
@@ -607,6 +658,7 @@ pub async fn install_component(
         "python_env" => install_python_env(&app, &manifest).await,
         "jupyterlab" => install_jupyterlab(&app, &manifest).await,
         "arduino_ide" => install_arduino_stack(&app, &manifest).await,
+        "serial_port_lsl" => install_serial_port_lsl(&app, &manifest).await,
         _ => install_generic_component(&app, &manifest, &id).await,
     };
     if let Ok(ref res) = result {
@@ -689,11 +741,31 @@ pub async fn launch_app(app: tauri::AppHandle, id: String) -> Result<String, Str
         return Ok("Launched JupyterLab in your browser.".to_string());
     }
 
+    #[cfg(target_os = "macos")]
+    if id == "serial_port_lsl" {
+        let py = workshop_venv_python();
+        if !py.exists() {
+            return Err(
+                "Workshop Python .venv not installed yet — install Python environment first."
+                    .to_string(),
+            );
+        }
+        let script = detect_serial_port_lsl_path()
+            .ok_or_else(|| "SerialPortLSL helper not installed yet.".to_string())?;
+        let mut cmd = Command::new(&py);
+        cmd.arg(&script);
+        cmd.current_dir(default_workshop_root());
+        cmd.spawn()
+            .map_err(|e| format!("Failed launching SerialPortLSL: {e}"))?;
+        return Ok("Launched SerialPortLSL.".to_string());
+    }
+
     let path_opt = match id.as_str() {
         "thonny" => detect_thonny_path(),
         "arduino_ide" => detect_arduino_ide_path(),
         "openbci_gui" => detect_openbci_gui_path(),
         "lab_recorder" => detect_lab_recorder_path(),
+        "serial_port_lsl" => detect_serial_port_lsl_path(),
         "antigravity" => detect_antigravity_path(),
         "github_desktop" => detect_github_desktop_path(),
         _ => None,

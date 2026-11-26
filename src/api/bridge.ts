@@ -18,7 +18,7 @@ import type {
   UninstallPlan,
 } from '../types';
 
-export const HUB_VERSION = '0.1.9';
+export const HUB_VERSION = '0.1.10';
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -125,6 +125,7 @@ export async function scanInstalledComponents(): Promise<ComponentScanStatus[]> 
       'drivers',
       'openbci_gui',
       'lab_recorder',
+      'serial_port_lsl',
       'antigravity',
       'github_desktop',
     ];

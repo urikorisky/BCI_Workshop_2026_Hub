@@ -10,6 +10,7 @@ export type ComponentId =
   | 'drivers'
   | 'openbci_gui'
   | 'lab_recorder'
+  | 'serial_port_lsl'
   | 'antigravity'
   | 'github_desktop';
 

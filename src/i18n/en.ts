@@ -144,6 +144,14 @@ export const en: Translations = {
       recommendedTag: 'Required for Workshop',
       approxSize: '~45 MB',
     },
+    serial_port_lsl: {
+      title: 'SerialPortLSL (Serial-to-LSL Bridge)',
+      subtitle: 'Streams live Arduino / sensor Serial/COM data into LSL for LabRecorder',
+      whyNeeded:
+        'Required to publish Arduino serial sensor data as a live LSL stream (Windows: official App-SerialPort; macOS: built-in Python GUI helper).',
+      recommendedTag: 'Required for Workshop',
+      approxSize: '~10 MB',
+    },
     antigravity: {
       title: 'Antigravity (AI Coding Agent Environment)',
       subtitle: 'AI pair-programming tool for writing code, debugging & reading datasheets',
@@ -290,6 +298,7 @@ export const en: Translations = {
       arduino_ide: { name: 'Arduino IDE', desc: 'Microcontroller code & Serial Plotter' },
       openbci_gui: { name: 'OpenBCI GUI', desc: 'EEG monitor & impedance check' },
       lab_recorder: { name: 'LabRecorder', desc: 'LSL .xdf stream recorder' },
+      serial_port_lsl: { name: 'SerialPortLSL', desc: 'Stream Serial/COM port to LSL' },
       antigravity: { name: 'Antigravity', desc: 'AI coding agent environment' },
       github_desktop: { name: 'GitHub Desktop', desc: 'Visual Git client' },
     },

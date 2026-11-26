@@ -39,6 +39,7 @@ type LaunchableAppId =
   | 'arduino_ide'
   | 'openbci_gui'
   | 'lab_recorder'
+  | 'serial_port_lsl'
   | 'antigravity'
   | 'github_desktop';
 
@@ -47,6 +48,7 @@ const LAUNCHABLE_APPS: LaunchableAppId[] = [
   'arduino_ide',
   'openbci_gui',
   'lab_recorder',
+  'serial_port_lsl',
   'thonny',
   'antigravity',
   'github_desktop',

@@ -141,6 +141,15 @@
         "kind": "targz"
       }
     },
+    "serial_port_lsl": {
+      "version": "1.1.0",
+      "approx_size_mb": 10,
+      "windows": {
+        "url": "https://github.com/labstreaminglayer/App-SerialPort/releases/download/v1.1/SerialPortLSL-1.1.0-Win_amd64.zip",
+        "sha256": "",
+        "kind": "zip"
+      }
+    },
     "thonny": {
       "version": "4.1.7",
       "approx_size_mb": 35,

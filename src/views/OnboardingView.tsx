@@ -49,6 +49,7 @@ const REQUIRED_IDS: ComponentId[] = [
   'drivers',
   'openbci_gui',
   'lab_recorder',
+  'serial_port_lsl',
 ];
 
 const COMPONENT_ORDER: ComponentId[] = [
@@ -57,6 +58,7 @@ const COMPONENT_ORDER: ComponentId[] = [
   'drivers',
   'openbci_gui',
   'lab_recorder',
+  'serial_port_lsl',
   'jupyterlab',
   'thonny',
   'antigravity',
