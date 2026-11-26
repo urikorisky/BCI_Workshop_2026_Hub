@@ -11,7 +11,7 @@ import {
   ArrowRight,
   Terminal,
   Info,
-  CloudCheck,
+  UploadCloud,
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import {
@@ -235,7 +235,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             )}
             {preScanTelemetryState === 'sent' && (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
-                <CloudCheck className="h-3.5 w-3.5" />
+                <UploadCloud className="h-3.5 w-3.5" />
                 <span>{t.onboarding.preScanUploadOk}</span>
               </span>
             )}
