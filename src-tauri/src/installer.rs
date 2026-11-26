@@ -241,7 +241,16 @@ async fn install_python_env(
         ("UV_LINK_MODE", "copy"),
     ];
 
-    if !workshop_venv_python().exists() {
+    let venv_py = workshop_venv_python();
+    let venv_runnable = venv_py.exists()
+        && run_silent_command(&venv_py.to_string_lossy(), &["-c", "import sys, tkinter"])
+            .map(|(ok, _, _)| ok)
+            .unwrap_or(false);
+
+    if !venv_runnable {
+        if venv_dir.exists() {
+            let _ = std::fs::remove_dir_all(&venv_dir);
+        }
         if let Some((sys_prog, sys_args, ver)) = find_compatible_system_python() {
             emit_progress(
                 app,
@@ -319,7 +328,7 @@ async fn install_python_env(
         "python_env",
         "packages",
         70,
-        "Installing Python packages (pyserial, numpy, scipy, PyQt6, sounddevice, pylsl, mne, brainflow)...",
+        "Installing Python packages (~450 MB, takes 2–4 min — please keep this window open)...",
     );
 
     let venv_py_str = workshop_venv_python().to_string_lossy().to_string();

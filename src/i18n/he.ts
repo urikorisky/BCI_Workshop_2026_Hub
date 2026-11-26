@@ -70,12 +70,16 @@ export const he = {
     clearSelection: 'נקה בחירה',
     installSelected: 'התחל התקנה של הרכיבים שנבחרו',
     installing: 'מתקין...',
+    installingKeepOpen:
+      'מתקין כעת — הורדת חבילות Python (~450 MB) יכולה לקחת 2–4 דקות. אנא אל תסגרו את החלון.',
     skipToDiagnostics: 'דלג לבדיקת תקינות המערכת',
     continueToDiagnostics: 'המשך לבדיקת המערכת ←',
     manualNeeded: 'נדרשת פעולה ידנית',
     detectedAt: 'זוהה ב:',
     liveLogTitle: 'יומן התקנה בזמן אמת',
     pythonVenvReady: 'סביבת הסדנה המבודדת (.venv) מוכנה במחשב ({ver}).',
+    pythonVenvIncomplete:
+      'זוהה .venv חלקי ({ver}) — התקנת החבילות הופסקה באמצע. השאירו מסומן ולחצו התקנה להשלמת החבילות.',
     pythonReuseCompatible:
       'זוהה Python {ver} תואם במחשב — המתקין ישתמש בו ליצירת סביבה מבודדת בתיקיית הסדנה.',
     pythonIncompatibleFound:

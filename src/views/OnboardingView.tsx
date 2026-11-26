@@ -90,6 +90,13 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
   const [activeModal, setActiveModal] = useState<PreActionModalPayload | null>(null);
   const [pendingResolver, setPendingResolver] = useState<((ok: boolean) => void) | null>(null);
   const hasAutoUploadedPreScan = useRef(false);
+  const logPreRef = useRef<HTMLPreElement | null>(null);
+
+  useEffect(() => {
+    if (logPreRef.current) {
+      logPreRef.current.scrollTop = logPreRef.current.scrollHeight;
+    }
+  }, [logs]);
 
   const appendLog = (line: string) => {
     setLogs((prev) => [...prev.slice(-80), line]);
@@ -272,6 +279,9 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       const ver = status.detected_version ?? '';
       if (status.notes === 'venv_ready') {
         return t.onboarding.pythonVenvReady.replace('{ver}', ver);
+      }
+      if (status.notes === 'venv_incomplete') {
+        return t.onboarding.pythonVenvIncomplete.replace('{ver}', ver);
       }
       if (status.notes === 'compatible_system_python') {
         return t.onboarding.pythonReuseCompatible.replace('{ver}', ver);
@@ -502,13 +512,21 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
           </div>
         )}
 
+        {installing && (
+          <div className="mt-5 flex items-center gap-2.5 rounded-xl border border-brand-200 bg-brand-50 px-4 py-3 text-xs font-semibold text-brand-900 sm:text-sm">
+            <RefreshCw className="h-4 w-4 shrink-0 animate-spin text-brand-600" />
+            <span>{t.onboarding.installingKeepOpen}</span>
+          </div>
+        )}
+
         {logs.length > 0 && (
-          <div className="mt-5 rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs text-slate-100">
+          <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900 p-4 text-xs text-slate-100">
             <div className="mb-2 flex items-center gap-1.5 font-semibold text-brand-300">
               <Terminal className="h-4 w-4" />
               <span>{t.onboarding.liveLogTitle}</span>
             </div>
             <pre
+              ref={logPreRef}
               className="max-h-44 overflow-y-auto whitespace-pre-wrap font-mono text-xs leading-relaxed"
               dir="ltr"
             >

@@ -62,12 +62,16 @@ export const en: Translations = {
     clearSelection: 'Clear Selection',
     installSelected: 'Install Selected Components',
     installing: 'Installing...',
+    installingKeepOpen:
+      'Installation in progress — downloading Python packages (~450 MB) typically takes 2–4 minutes. Please keep this window open.',
     skipToDiagnostics: 'Skip to System Verification',
     continueToDiagnostics: 'Continue to System Verification →',
     manualNeeded: 'Manual Step Required',
     detectedAt: 'Detected at:',
     liveLogTitle: 'Live Installation Log',
     pythonVenvReady: 'Workshop isolated .venv is already ready ({ver}).',
+    pythonVenvIncomplete:
+      'Incomplete workshop .venv detected ({ver}) — package installation was interrupted. Keep checked and click Install to finish.',
     pythonReuseCompatible:
       'Compatible Python {ver} detected — the installer will reuse it to create an isolated .venv.',
     pythonIncompatibleFound:

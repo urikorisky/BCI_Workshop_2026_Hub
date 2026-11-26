@@ -332,15 +332,45 @@ pub async fn scan_installed_components() -> Result<Vec<ComponentScanStatus>, Str
     // 1. python_env
     let venv_py = workshop_venv_python();
     let py_status = if venv_py.exists() {
-        let ver = run_silent_command(&venv_py.to_string_lossy(), &["--version"])
-            .map(|(_, o, _)| o)
-            .unwrap_or_else(|| "Workshop .venv".to_string());
-        ComponentScanStatus {
-            id: "python_env".to_string(),
-            installed: true,
-            detected_version: Some(ver),
-            detected_path: Some(venv_py.to_string_lossy().to_string()),
-            notes: Some("venv_ready".to_string()),
+        let pkg_probe = "import importlib.util, sys; req=['serial','numpy','scipy','PyQt6','sounddevice','matplotlib','pylsl','mne','brainflow']; miss=[m for m in req if importlib.util.find_spec(m) is None]; v=sys.version_info; print(f'{v.major}.{v.minor}.{v.micro}|' + ','.join(miss)); sys.exit(0 if not miss else 3)";
+        match run_silent_command(&venv_py.to_string_lossy(), &["-c", pkg_probe]) {
+            Some((true, stdout, _)) => {
+                let ver_part = stdout.split('|').next().unwrap_or("").trim();
+                let ver_label = if ver_part.is_empty() {
+                    "Workshop .venv".to_string()
+                } else {
+                    format!("Python {ver_part}")
+                };
+                ComponentScanStatus {
+                    id: "python_env".to_string(),
+                    installed: true,
+                    detected_version: Some(ver_label),
+                    detected_path: Some(venv_py.to_string_lossy().to_string()),
+                    notes: Some("venv_ready".to_string()),
+                }
+            }
+            Some((false, stdout, _)) => {
+                let ver_part = stdout.split('|').next().unwrap_or("").trim();
+                let ver_label = if ver_part.is_empty() {
+                    "Incomplete .venv".to_string()
+                } else {
+                    format!("Python {ver_part}")
+                };
+                ComponentScanStatus {
+                    id: "python_env".to_string(),
+                    installed: false,
+                    detected_version: Some(ver_label),
+                    detected_path: Some(venv_py.to_string_lossy().to_string()),
+                    notes: Some("venv_incomplete".to_string()),
+                }
+            }
+            None => ComponentScanStatus {
+                id: "python_env".to_string(),
+                installed: false,
+                detected_version: Some("Incomplete .venv".to_string()),
+                detected_path: Some(venv_py.to_string_lossy().to_string()),
+                notes: Some("venv_incomplete".to_string()),
+            },
         }
     } else if let Some((prog, _, ver)) = find_compatible_system_python() {
         ComponentScanStatus {

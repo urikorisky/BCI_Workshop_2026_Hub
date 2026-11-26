@@ -18,7 +18,7 @@ import type {
   UninstallPlan,
 } from '../types';
 
-export const HUB_VERSION = '0.1.7';
+export const HUB_VERSION = '0.1.8';
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
