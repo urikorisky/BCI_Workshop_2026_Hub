@@ -155,8 +155,7 @@ export const he = {
       title: 'SerialPortLSL (ממיר Serial/COM ל-LSL)',
       subtitle: 'שליחת זרם נתונים מבקר ה-Arduino ישירות לרשת LSL לצורך הקלטה ב-LabRecorder',
       whyNeeded:
-        'רכיב חובה לחיבור חיישנים ו-Arduino ל-LSL בזמן אמת (ב-Windows: גרסת App-SerialPort הרשמית; ב-Mac: ממשק Python מובנה).',
-      recommendedTag: 'חובה לסדנה',
+        'כלי משלים להזרמת נתוני Arduino ל-LSL בזמן אמת (ב-Windows: גרסת App-SerialPort הרשמית; ב-Mac: ממשק Python מובנה).',
       approxSize: '~10 MB',
     },
     antigravity: {

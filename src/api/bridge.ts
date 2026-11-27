@@ -18,7 +18,7 @@ import type {
   UninstallPlan,
 } from '../types';
 
-export const HUB_VERSION = '0.1.10';
+export const HUB_VERSION = '0.1.11';
 
 export function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
@@ -268,6 +268,7 @@ export async function uploadTelemetry(params: {
   eventType:
     | 'sign_in'
     | 'pre_scan_diagnostics'
+    | 'post_install_diagnostics'
     | 'diagnostics'
     | 'install_error'
     | 'help_request';

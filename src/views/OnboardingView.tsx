@@ -24,6 +24,15 @@ import {
   scanInstalledComponents,
   uploadTelemetry,
 } from '../api/bridge';
+import {
+  hasInstalledBefore,
+  hasUploadedPreScan,
+  hasVisitedOnboarding,
+  hasWorkshopSetupOnDisk,
+  markHasInstalled,
+  markOnboardingVisited,
+  markPreScanUploaded,
+} from '../state/onboardingState';
 import { PreActionModal } from '../components/PreActionModal';
 import type {
   AuthUser,
@@ -49,7 +58,6 @@ const REQUIRED_IDS: ComponentId[] = [
   'drivers',
   'openbci_gui',
   'lab_recorder',
-  'serial_port_lsl',
 ];
 
 const COMPONENT_ORDER: ComponentId[] = [
@@ -111,7 +119,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
     return false;
   };
 
-  const runScan = async (autoUploadBaseline = false) => {
+  const runScan = async (allowInitialPreScan = false) => {
     setScanning(true);
     try {
       const [g, s] = await Promise.all([getSystemGuardrails(), scanInstalledComponents()]);
@@ -119,14 +127,20 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       setScans(s);
       onScanUpdated(s);
       const autoDefaults = REQUIRED_IDS.filter((id) => needsSetupAction(id, s));
-      if (selectedApps.length === 0 && autoDefaults.length > 0 && !autoUploadBaseline) {
-        onSelectedAppsChange(autoDefaults);
-      } else if (autoUploadBaseline && selectedApps.length === 0 && autoDefaults.length > 0) {
+      if (selectedApps.length === 0 && autoDefaults.length > 0) {
         onSelectedAppsChange(autoDefaults);
       }
 
-      if (autoUploadBaseline && !hasAutoUploadedPreScan.current) {
+      const alreadyBeenHere =
+        hasVisitedOnboarding() ||
+        hasInstalledBefore() ||
+        hasUploadedPreScan() ||
+        hasWorkshopSetupOnDisk(s);
+      markOnboardingVisited();
+
+      if (allowInitialPreScan && !hasAutoUploadedPreScan.current && !alreadyBeenHere) {
         hasAutoUploadedPreScan.current = true;
+        markPreScanUploaded();
         const endpoint = manifest?.urls.telemetry_endpoint ?? '';
         if (endpoint && !endpoint.includes('REPLACE_WITH')) {
           setPreScanTelemetryState('sending');
@@ -140,6 +154,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
               report: baselineReport,
               osArch,
               optionalAppsSelected: autoDefaults,
+              rawLogs: `[PHASE: PRE-INSTALL]\n${baselineReport.raw_logs}`,
             });
             setPreScanTelemetryState(resp.ok ? 'sent' : 'idle');
           } catch {
@@ -233,6 +248,10 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
       }
     }
 
+    if (succeededIds.size > 0) {
+      markHasInstalled();
+    }
+
     await runScan(false);
     // Keep only failed/pending items selected so the user isn't prompted to reinstall succeeded ones.
     onSelectedAppsChange(selectedApps.filter((id) => !succeededIds.has(id)));
@@ -247,6 +266,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             ? `${guardrails.os_name} ${guardrails.os_version} (${guardrails.arch})`.trim()
             : '';
           const diag = await runDiagnostics(selectedApps).catch(() => undefined);
+          const phaseTag = hasInstalledBefore() ? '[PHASE: POST-INSTALL]' : '[PHASE: INSTALL]';
           const resp = await uploadTelemetry({
             endpoint,
             user,
@@ -256,7 +276,7 @@ export const OnboardingView: React.FC<OnboardingViewProps> = ({
             overallStatus: 'INSTALL_ERROR',
             optionalAppsSelected: selectedApps,
             studentNote: `Auto-report: install failed for ${failures.map((f) => `${f.id} (${f.message})`).join('; ')}`,
-            rawLogs: `${sessionLogs.join('\n')}\n\n${diag?.raw_logs ?? ''}`.trim(),
+            rawLogs: `${phaseTag}\n${sessionLogs.join('\n')}\n\n${diag?.raw_logs ?? ''}`.trim(),
           });
           setErrorReportStatus(resp.ok ? 'sent' : 'failed');
         } catch {

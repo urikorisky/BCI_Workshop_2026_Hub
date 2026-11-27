@@ -10,11 +10,19 @@ import {
 } from 'lucide-react';
 import { useI18n } from '../i18n';
 import { runDiagnostics, uploadTelemetry } from '../api/bridge';
-import type { AuthUser, ComponentId, DiagnosticReport, Manifest } from '../types';
+import { hasInstalledBefore, hasWorkshopSetupOnDisk } from '../state/onboardingState';
+import type {
+  AuthUser,
+  ComponentId,
+  ComponentScanStatus,
+  DiagnosticReport,
+  Manifest,
+} from '../types';
 
 interface DiagnosticsViewProps {
   user: AuthUser;
   manifest: Manifest | null;
+  scans: ComponentScanStatus[];
   selectedApps: ComponentId[];
   onGoDashboard: () => void;
 }
@@ -22,6 +30,7 @@ interface DiagnosticsViewProps {
 export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
   user,
   manifest,
+  scans,
   selectedApps,
   onGoDashboard,
 }) => {
@@ -32,18 +41,22 @@ export const DiagnosticsView: React.FC<DiagnosticsViewProps> = ({
   const [uploadNotice, setUploadNotice] = useState<{ ok: boolean; msg: string } | null>(null);
   const hasAutoStarted = useRef(false);
 
+  const isPostInstall = hasInstalledBefore() || hasWorkshopSetupOnDisk(scans);
+
   const uploadReport = async (diagReport: DiagnosticReport) => {
     const endpoint = manifest?.urls.telemetry_endpoint ?? '';
     if (!endpoint || endpoint.includes('REPLACE_WITH')) return;
     setUploading(true);
     setUploadNotice(null);
+    const phaseTag = isPostInstall ? '[PHASE: POST-INSTALL]' : '[PHASE: PRE-INSTALL]';
     try {
       const resp = await uploadTelemetry({
         endpoint,
         user,
-        eventType: 'diagnostics',
+        eventType: isPostInstall ? 'post_install_diagnostics' : 'diagnostics',
         report: diagReport,
         optionalAppsSelected: selectedApps,
+        rawLogs: `${phaseTag}\n${diagReport.raw_logs}`,
       });
       if (resp.ok) {
         setUploadNotice({ ok: true, msg: t.diagnostics.uploadSuccess });

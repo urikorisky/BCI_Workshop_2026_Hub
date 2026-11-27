@@ -39,9 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
   const noticeText = notice ? (lang === 'he' ? notice.he : notice.en) : '';
 
   const navItems: { id: AppScreen; label: string }[] = [
+    { id: 'dashboard', label: t.nav.dashboard },
     { id: 'onboarding', label: t.nav.onboarding },
     { id: 'diagnostics', label: t.nav.diagnostics },
-    { id: 'dashboard', label: t.nav.dashboard },
   ];
 
   return (

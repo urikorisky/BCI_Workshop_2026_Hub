@@ -10,7 +10,14 @@ import {
   getSystemGuardrails,
   loadAuthSession,
   saveAuthSession,
+  scanInstalledComponents,
 } from './api/bridge';
+import {
+  hasInstalledBefore,
+  hasVisitedOnboarding,
+  hasWorkshopSetupOnDisk,
+  markOnboardingVisited,
+} from './state/onboardingState';
 import { Header } from './components/Header';
 import { UpdatePromptModal } from './components/UpdatePromptModal';
 import { UninstallModal } from './components/UninstallModal';
@@ -39,17 +46,33 @@ const AppShell: React.FC = () => {
   const [uninstallModalOpen, setUninstallModalOpen] = useState(false);
   const [osName, setOsName] = useState<string>('');
 
+  const resolvePostSignInScreen = (loadedScans: ComponentScanStatus[]): AppScreen => {
+    if (
+      hasVisitedOnboarding() ||
+      hasInstalledBefore() ||
+      hasWorkshopSetupOnDisk(loadedScans)
+    ) {
+      markOnboardingVisited();
+      return 'dashboard';
+    }
+    return 'onboarding';
+  };
+
   useEffect(() => {
     let cancelled = false;
     void fetchManifest().then((loadedManifest) => {
       if (cancelled) return;
       setManifest(loadedManifest);
       void loadAuthSession(loadedManifest.oauth_client_id ?? '', HUB_VERSION)
-        .then((savedUser) => {
-          if (!cancelled && savedUser) {
-            setUser(savedUser);
-            setScreen((prev) => (prev === 'sign_in' ? 'onboarding' : prev));
-          }
+        .then(async (savedUser) => {
+          if (cancelled || !savedUser) return;
+          const freshScans = await scanInstalledComponents().catch(() => []);
+          if (cancelled) return;
+          setScans(freshScans);
+          setUser(savedUser);
+          setScreen((prev) =>
+            prev === 'sign_in' ? resolvePostSignInScreen(freshScans) : prev
+          );
         })
         .catch(() => {});
     });
@@ -73,12 +96,17 @@ const AppShell: React.FC = () => {
 
   const handleSignedIn = (authedUser: AuthUser, rememberMe: boolean) => {
     setUser(authedUser);
-    setScreen('onboarding');
     if (rememberMe) {
       void saveAuthSession(authedUser, HUB_VERSION).catch(() => {});
     } else {
       void clearAuthSession().catch(() => {});
     }
+    void scanInstalledComponents()
+      .catch(() => [])
+      .then((freshScans) => {
+        setScans(freshScans);
+        setScreen(resolvePostSignInScreen(freshScans));
+      });
   };
 
   const handleSignOut = () => {
@@ -115,6 +143,7 @@ const AppShell: React.FC = () => {
           <DiagnosticsView
             user={user}
             manifest={manifest}
+            scans={scans}
             selectedApps={selectedApps}
             onGoDashboard={() => setScreen('dashboard')}
           />

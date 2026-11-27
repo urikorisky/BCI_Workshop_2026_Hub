@@ -148,8 +148,7 @@ export const en: Translations = {
       title: 'SerialPortLSL (Serial-to-LSL Bridge)',
       subtitle: 'Streams live Arduino / sensor Serial/COM data into LSL for LabRecorder',
       whyNeeded:
-        'Required to publish Arduino serial sensor data as a live LSL stream (Windows: official App-SerialPort; macOS: built-in Python GUI helper).',
-      recommendedTag: 'Required for Workshop',
+        'Companion tool to publish Arduino serial sensor data as a live LSL stream (Windows: official App-SerialPort; macOS: built-in Python GUI helper).',
       approxSize: '~10 MB',
     },
     antigravity: {
